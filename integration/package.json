@@ -1,0 +1,16 @@
+{
+  "name": "agent-wallet-integration-examples",
+  "private": true,
+  "type": "module",
+  "description": "Runnable viem examples for the AgentWallet contracts (reads, owner writes, agent UserOps, events, owner approval).",
+  "scripts": {
+    "read": "node read.mjs",
+    "events": "node events.mjs",
+    "configure": "node owner-configure.mjs",
+    "purchase": "node agent-purchase.mjs",
+    "approve": "node owner-approve.mjs"
+  },
+  "dependencies": {
+    "viem": "2.57.11"
+  }
+}

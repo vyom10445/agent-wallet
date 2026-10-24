@@ -7,7 +7,7 @@
 ## Basics
 
 - AgentWallet = eth-infinitism **SimpleAccount v0.7.0** + an agent-permission layer. One owner, many agents.
-- **EntryPoint v0.7.** Base Sepolia (84532): `0x0000000071727De22E5E9d8BAf0edAc6f37da032`. Local Anvil: deployed by our script (address TBD).
+- **EntryPoint v0.7.** Base Sepolia (84532): `0x0000000071727De22E5E9d8BAf0edAc6f37da032`. Local Anvil: deployed by our script at `0xE8530f6B18EC6f3D89C2f1ae005983bc78e4Fa6d`.
 - **Amounts** are token base units. MockUSDC has **6 decimals**: `1 USDC = 1_000_000`, `$0.25 = 250_000`.
 - **Times** are unix seconds (`uint48`). The daily limit resets at **00:00 UTC** (`block.timestamp / 86400`).
 - **Signatures** (owner and agents): EIP-191 `personal_sign` over `entryPoint.getUserOpHash(userOp)`. Same as SimpleAccount.
@@ -17,12 +17,13 @@
 | Contract | Anvil (31337) | Base Sepolia (84532) |
 |---|---|---|
 | EntryPoint v0.7 | `0xE8530f6B18EC6f3D89C2f1ae005983bc78e4Fa6d` (built from v0.7.0 source) | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` |
-| AgentWalletFactory | `0xcb888656f4CAc875a026F81813f918CEe47961fe` | TBD |
-| MockUSDC | `0xC91a11d7096c0685590267C083Fd67A518D65C3F` | TBD |
-| MockMerchant | `0x8D94CcD748a00C27Cc339aaE3A14F2965E8b4FC1` | TBD |
-| AgentWallet (owner = Anvil account 0, salt 0) | `0xDbe007a166e75Dec7ffcB12D42071a4B3bD56Ef1` | `factory.getAddress(owner, 0)` |
+| AgentWalletFactory | `0xe6bcD262Dc016B36DE1651f5551A977A58825E35` | `0xAD5E19b7A292735b79D13e48A854BAf6baC96D51` |
+| AgentWallet implementation | `0x576aE8F4fd4D40FFd80E10242E3b0AF3BAc72EE1` | `0xec0de95c6C52d1AECCECde692c422c94987Bc262` |
+| MockUSDC | `0xC91a11d7096c0685590267C083Fd67A518D65C3F` | `0xC91a11d7096c0685590267C083Fd67A518D65C3F` |
+| MockMerchant | `0x8D94CcD748a00C27Cc339aaE3A14F2965E8b4FC1` | `0x8D94CcD748a00C27Cc339aaE3A14F2965E8b4FC1` |
+| AgentWallet | `0x70A8332D43C7b276625AF7fA3c1Ba3eE0546eb21` (owner = Anvil account 0) | `0x74cD24BBaf39022155d2912923F4dC234D215c1A` (owner `0x815d211D2E85E2C2526f0CC3bB1DEE11513C7b64`) |
 
-Anvil addresses are deterministic (CREATE2 via `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("imperials.agent-wallet.v1")`) and are the same on every fresh Anvil node. Submitters must give `handleOps` at least `UserOps.bundleGasLimit()` gas (see PHASE8_INTEGRATION.md).
+The machine-readable source of truth is `contracts/deployments/<chainId>.json`; see docs/PHASE11_INTEGRATION.md. The factory and wallet addresses changed in Phase 9, because the AgentWallet bytecode changed (nonce-key fix). Anvil addresses are deterministic (CREATE2 via `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("imperials.agent-wallet.v1")`) and are the same on every fresh Anvil node. Submitters must give `handleOps` at least `UserOps.bundleGasLimit()` gas (see PHASE8_INTEGRATION.md).
 
 ## Authorization rules
 

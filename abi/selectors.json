@@ -1,0 +1,210 @@
+{
+  "AgentWallet": {
+    "functions": {
+      "UPGRADE_INTERFACE_VERSION()": "ad3cb1cc",
+      "addAgent(address,uint48,uint48)": "e666ca1a",
+      "addDeposit()": "4a58db19",
+      "allowCall(address,address,bytes4,bool)": "6d8c9a37",
+      "allowRecipient(address,address,bool)": "7e858821",
+      "entryPoint()": "b0d691fe",
+      "execute(address,uint256,bytes)": "b61d27f6",
+      "executeAsAgent(address,address,uint256,bytes)": "6151bacc",
+      "executeBatch(address[],uint256[],bytes[])": "47e1da2a",
+      "getAgent(address)": "fb3551ff",
+      "getDeposit()": "c399ec88",
+      "getNonce()": "d087d288",
+      "initialize(address)": "c4d66de8",
+      "isAgentValid(address)": "86049fc2",
+      "isCallAllowed(address,address,bytes4)": "1cf1221c",
+      "isRecipientAllowed(address,address)": "a6f4899d",
+      "onERC1155BatchReceived(address,address,uint256[],uint256[],bytes)": "bc197c81",
+      "onERC1155Received(address,address,uint256,uint256,bytes)": "f23a6e61",
+      "onERC721Received(address,address,uint256,bytes)": "150b7a02",
+      "owner()": "8da5cb5b",
+      "proxiableUUID()": "52d1902d",
+      "remainingDailyAllowance(address)": "956d1175",
+      "revokeAgent(address)": "7da6ac0d",
+      "setPolicy(address,address,uint256,uint256)": "f582b4df",
+      "supportsInterface(bytes4)": "01ffc9a7",
+      "upgradeToAndCall(address,bytes)": "4f1ef286",
+      "validateUserOp((address,uint256,bytes,bytes,bytes32,uint256,bytes32,bytes,bytes),bytes32,uint256)": "19822f7c",
+      "withdrawDepositTo(address,uint256)": "4d44560d"
+    },
+    "events": {
+      "AgentAdded(address,uint48,uint48)": "0xbf561bc0ba29536c0092026e9e5242a3f6026f2dc695f043b7fddc629fc70c92",
+      "AgentExecuted(address,address,bytes4,uint256)": "0xdaddc4548fe27ff432d6af5973dac27bb62457f8c483d041de98619426191cc0",
+      "AgentRevoked(address)": "0x1d2ac3af5c639e57ee8f25bc162ea13a1ef8a663c92a4f3e33f126dd2d4feba4",
+      "AgentSpent(address,address,address,uint256,uint256)": "0x0ba88a0f49f7d2c96bca2e88eb2d02bfe1f2df759ff5858bf30b38e541822125",
+      "CallPermissionSet(address,address,bytes4,bool)": "0x794f69339e49b9559323ce08ec8c35ae56c885ff64474151bd91d44de3c898c8",
+      "Initialized(uint64)": "0xc7f505b2f371ae2175ee4913f4499e1f2633a7b5936321eed1cdaeb6115181d2",
+      "PolicySet(address,address,uint256,uint256)": "0xbebc407851cb2dcdf0fc23c4cd430e0caa9f6314cdd0f14aa0fe40a0a4640003",
+      "RecipientPermissionSet(address,address,bool)": "0x5d7323b723a3e748cb329a9f4d536ad95a1a0a29c9a22f5ec38b09f861c5aab4",
+      "SimpleAccountInitialized(IEntryPoint,address)": "0x47e55c76e7a6f1fd8996a1da8008c1ea29699cca35e7bcd057f2dec313b6e5de",
+      "Upgraded(address)": "0xbc7cd75a20ee27fd9adebab32041f755214dbc6bffa90cc0225b39da2e5c2d3b"
+    },
+    "errors": {
+      "AddressEmptyCode(address)": "9996b315",
+      "AgentAlreadyActive(address)": "82e28244",
+      "AgentNotValid(address)": "cc044a23",
+      "CallNotAllowed(address,address,bytes4)": "794bbe2b",
+      "ECDSAInvalidSignature()": "f645eedf",
+      "ECDSAInvalidSignatureLength(uint256)": "fce698f7",
+      "ECDSAInvalidSignatureS(bytes32)": "d78bce0c",
+      "ERC1967InvalidImplementation(address)": "4c9c8ce3",
+      "ERC1967NonPayable()": "b398979f",
+      "ExceedsDailyLimit(uint256,uint256)": "473a3226",
+      "ExceedsPerTxLimit(uint256,uint256)": "d1e6b2fa",
+      "FailedInnerCall()": "1425ea42",
+      "ForbiddenTarget(address)": "d961aafe",
+      "InvalidAgent(address)": "d49c3ca2",
+      "InvalidInitialization()": "f92ee8a9",
+      "InvalidTokenCall(bytes4)": "586186c2",
+      "InvalidValidityWindow(uint48,uint48)": "364bee20",
+      "NativeValueNotAllowed(uint256)": "175034b2",
+      "NotInitializing()": "d7e6bcf8",
+      "RecipientNotAllowed(address,address)": "28c539e8",
+      "UUPSUnauthorizedCallContext()": "e07c8dba",
+      "UUPSUnsupportedProxiableUUID(bytes32)": "aa1d49a4",
+      "UnauthorizedCaller(address)": "d86ad9cf"
+    }
+  },
+  "IAgentWallet": {
+    "functions": {
+      "addAgent(address,uint48,uint48)": "e666ca1a",
+      "allowCall(address,address,bytes4,bool)": "6d8c9a37",
+      "allowRecipient(address,address,bool)": "7e858821",
+      "executeAsAgent(address,address,uint256,bytes)": "6151bacc",
+      "getAgent(address)": "fb3551ff",
+      "isAgentValid(address)": "86049fc2",
+      "isCallAllowed(address,address,bytes4)": "1cf1221c",
+      "isRecipientAllowed(address,address)": "a6f4899d",
+      "remainingDailyAllowance(address)": "956d1175",
+      "revokeAgent(address)": "7da6ac0d",
+      "setPolicy(address,address,uint256,uint256)": "f582b4df"
+    },
+    "events": {
+      "AgentAdded(address,uint48,uint48)": "0xbf561bc0ba29536c0092026e9e5242a3f6026f2dc695f043b7fddc629fc70c92",
+      "AgentExecuted(address,address,bytes4,uint256)": "0xdaddc4548fe27ff432d6af5973dac27bb62457f8c483d041de98619426191cc0",
+      "AgentRevoked(address)": "0x1d2ac3af5c639e57ee8f25bc162ea13a1ef8a663c92a4f3e33f126dd2d4feba4",
+      "AgentSpent(address,address,address,uint256,uint256)": "0x0ba88a0f49f7d2c96bca2e88eb2d02bfe1f2df759ff5858bf30b38e541822125",
+      "CallPermissionSet(address,address,bytes4,bool)": "0x794f69339e49b9559323ce08ec8c35ae56c885ff64474151bd91d44de3c898c8",
+      "PolicySet(address,address,uint256,uint256)": "0xbebc407851cb2dcdf0fc23c4cd430e0caa9f6314cdd0f14aa0fe40a0a4640003",
+      "RecipientPermissionSet(address,address,bool)": "0x5d7323b723a3e748cb329a9f4d536ad95a1a0a29c9a22f5ec38b09f861c5aab4"
+    },
+    "errors": {
+      "AgentAlreadyActive(address)": "82e28244",
+      "AgentNotValid(address)": "cc044a23",
+      "CallNotAllowed(address,address,bytes4)": "794bbe2b",
+      "ExceedsDailyLimit(uint256,uint256)": "473a3226",
+      "ExceedsPerTxLimit(uint256,uint256)": "d1e6b2fa",
+      "ForbiddenTarget(address)": "d961aafe",
+      "InvalidAgent(address)": "d49c3ca2",
+      "InvalidTokenCall(bytes4)": "586186c2",
+      "InvalidValidityWindow(uint48,uint48)": "364bee20",
+      "NativeValueNotAllowed(uint256)": "175034b2",
+      "RecipientNotAllowed(address,address)": "28c539e8",
+      "UnauthorizedCaller(address)": "d86ad9cf"
+    }
+  },
+  "AgentWalletFactory": {
+    "functions": {
+      "accountImplementation()": "11464fbe",
+      "createAccount(address,uint256)": "5fbfb9cf",
+      "getAddress(address,uint256)": "8cb84e18"
+    },
+    "events": {},
+    "errors": {}
+  },
+  "MockUSDC": {
+    "functions": {
+      "allowance(address,address)": "dd62ed3e",
+      "approve(address,uint256)": "095ea7b3",
+      "balanceOf(address)": "70a08231",
+      "decimals()": "313ce567",
+      "mint(address,uint256)": "40c10f19",
+      "name()": "06fdde03",
+      "symbol()": "95d89b41",
+      "totalSupply()": "18160ddd",
+      "transfer(address,uint256)": "a9059cbb",
+      "transferFrom(address,address,uint256)": "23b872dd"
+    },
+    "events": {
+      "Approval(address,address,uint256)": "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",
+      "Transfer(address,address,uint256)": "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+    },
+    "errors": {
+      "ERC20InsufficientAllowance(address,uint256,uint256)": "fb8f41b2",
+      "ERC20InsufficientBalance(address,uint256,uint256)": "e450d38c",
+      "ERC20InvalidApprover(address)": "e602df05",
+      "ERC20InvalidReceiver(address)": "ec442f05",
+      "ERC20InvalidSender(address)": "96c6fd1e",
+      "ERC20InvalidSpender(address)": "94280d62"
+    }
+  },
+  "MockMerchant": {
+    "functions": {
+      "creditsOf(address)": "245a45b5",
+      "pricePerCredit()": "f3ab90c3",
+      "purchase(uint256,uint256)": "70876c98",
+      "purchaseCount()": "2b85ed9c",
+      "quote(uint256)": "ed1bd76c",
+      "token()": "fc0c546a"
+    },
+    "events": {
+      "CreditsPurchased(uint256,address,uint256,uint256)": "0x9791971add465e345b4bdca900c99b8e4b219a257cf3cb84dc1fda2945d76b8e"
+    },
+    "errors": {
+      "AddressEmptyCode(address)": "9996b315",
+      "AddressInsufficientBalance(address)": "cd786059",
+      "FailedInnerCall()": "1425ea42",
+      "IncorrectPayment(uint256,uint256)": "0d35e921",
+      "SafeERC20FailedOperation(address)": "5274afe7",
+      "ZeroCredits()": "943ec9b1"
+    }
+  },
+  "EntryPoint": {
+    "functions": {
+      "addStake(uint32)": "0396cb60",
+      "balanceOf(address)": "70a08231",
+      "delegateAndRevert(address,bytes)": "850aaf62",
+      "depositTo(address)": "b760faf9",
+      "deposits(address)": "fc7e286d",
+      "getDepositInfo(address)": "5287ce12",
+      "getNonce(address,uint192)": "35567e1a",
+      "getSenderAddress(bytes)": "9b249f69",
+      "getUserOpHash((address,uint256,bytes,bytes,bytes32,uint256,bytes32,bytes,bytes))": "22cdde4c",
+      "handleAggregatedOps(((address,uint256,bytes,bytes,bytes32,uint256,bytes32,bytes,bytes)[],address,bytes)[],address)": "dbed18e0",
+      "handleOps((address,uint256,bytes,bytes,bytes32,uint256,bytes32,bytes,bytes)[],address)": "765e827f",
+      "incrementNonce(uint192)": "0bd28e3b",
+      "innerHandleOp(bytes,((address,uint256,uint256,uint256,uint256,uint256,uint256,address,uint256,uint256),bytes32,uint256,uint256,uint256),bytes)": "0042dc53",
+      "nonceSequenceNumber(address,uint192)": "1b2e01b8",
+      "supportsInterface(bytes4)": "01ffc9a7",
+      "unlockStake()": "bb9fe6bf",
+      "withdrawStake(address)": "c23a5cea",
+      "withdrawTo(address,uint256)": "205c2878"
+    },
+    "events": {
+      "AccountDeployed(bytes32,address,address,address)": "0xd51a9c61267aa6196961883ecf5ff2da6619c37dac0fa92122513fb32c032d2d",
+      "BeforeExecution()": "0xbb47ee3e183a558b1a2ff0874b079f3fc5478b7454eacf2bfc5af2ff5878f972",
+      "Deposited(address,uint256)": "0x2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c4",
+      "PostOpRevertReason(bytes32,address,uint256,bytes)": "0xf62676f440ff169a3a9afdbf812e89e7f95975ee8e5c31214ffdef631c5f4792",
+      "SignatureAggregatorChanged(address)": "0x575ff3acadd5ab348fe1855e217e0f3678f8d767d7494c9f9fefbee2e17cca4d",
+      "StakeLocked(address,uint256,uint256)": "0xa5ae833d0bb1dcd632d98a8b70973e8516812898e19bf27b70071ebc8dc52c01",
+      "StakeUnlocked(address,uint256)": "0xfa9b3c14cc825c412c9ed81b3ba365a5b459439403f18829e572ed53a4180f0a",
+      "StakeWithdrawn(address,address,uint256)": "0xb7c918e0e249f999e965cafeb6c664271b3f4317d296461500e71da39f0cbda3",
+      "UserOperationEvent(bytes32,address,address,uint256,bool,uint256,uint256)": "0x49628fd1471006c1482da88028e9ce4dbb080b815c9b0344d39e5a8e6ec1419f",
+      "UserOperationPrefundTooLow(bytes32,address,uint256)": "0x67b4fa9642f42120bf031f3051d1824b0fe25627945b27b8a6a65d5761d5482e",
+      "UserOperationRevertReason(bytes32,address,uint256,bytes)": "0x1c4fada7374c0a9ee8841fc38afe82932dc0f8e69012e927f061a8bae611a201",
+      "Withdrawn(address,address,uint256)": "0xd1c19fbcd4551a5edfb66d43d2e337c04837afda3482b42bdf569a8fccdae5fb"
+    },
+    "errors": {
+      "DelegateAndRevert(bool,bytes)": "99410554",
+      "FailedOp(uint256,string)": "220266b6",
+      "FailedOpWithRevert(uint256,string,bytes)": "65c8fd4d",
+      "PostOpReverted(bytes)": "ad7954bc",
+      "ReentrancyGuardReentrantCall()": "3ee5aeb5",
+      "SenderAddressResult(address)": "6ca7b806",
+      "SignatureValidationFailed(address)": "86a9f750"
+    }
+  }
+}
