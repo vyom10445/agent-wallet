@@ -16,10 +16,13 @@
 
 | Contract | Anvil (31337) | Base Sepolia (84532) |
 |---|---|---|
-| EntryPoint v0.7 | TBD (deployed by script) | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` |
-| AgentWalletFactory | TBD | TBD |
-| MockUSDC | TBD | TBD |
-| MockMerchant | TBD | TBD |
+| EntryPoint v0.7 | `0xE8530f6B18EC6f3D89C2f1ae005983bc78e4Fa6d` (built from v0.7.0 source) | `0x0000000071727De22E5E9d8BAf0edAc6f37da032` |
+| AgentWalletFactory | `0xcb888656f4CAc875a026F81813f918CEe47961fe` | TBD |
+| MockUSDC | `0xC91a11d7096c0685590267C083Fd67A518D65C3F` | TBD |
+| MockMerchant | `0x8D94CcD748a00C27Cc339aaE3A14F2965E8b4FC1` | TBD |
+| AgentWallet (owner = Anvil account 0, salt 0) | `0xDbe007a166e75Dec7ffcB12D42071a4B3bD56Ef1` | `factory.getAddress(owner, 0)` |
+
+Anvil addresses are deterministic (CREATE2 via `0x4e59b44847b379578588920cA78FbF26c0B4956C`, salt `keccak256("imperials.agent-wallet.v1")`) and are the same on every fresh Anvil node. Submitters must give `handleOps` at least `UserOps.bundleGasLimit()` gas (see PHASE8_INTEGRATION.md).
 
 ## Authorization rules
 

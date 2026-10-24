@@ -71,6 +71,16 @@ forge test --match-contract MockMerchantTest
 forge script script/DemoPurchase.s.sol --rpc-url anvil --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
 
+## Phase 8 (integration, H12 demo)
+
+```bash
+forge test --match-contract IntegrationTest -vv
+# live H12 flow on Anvil (run `anvil` in another terminal first):
+forge script script/H12Demo.s.sol --rpc-url anvil --broadcast
+# deploy only:
+forge script script/Deploy.s.sol --rpc-url anvil --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+```
+
 ## Keys
 
 Use Anvil's built-in dev accounts locally. For Base Sepolia, use a throwaway testnet account stored in an
