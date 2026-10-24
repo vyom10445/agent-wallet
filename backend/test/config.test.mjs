@@ -1,5 +1,6 @@
 // Offline tests for src/config.js. Uses only Anvil's published dev keys.
 import { test } from "node:test";
+import { existsSync } from "node:fs";
 import assert from "node:assert/strict";
 import { loadConfig, loadDeployment, ConfigError } from "../src/config.js";
 
@@ -71,7 +72,12 @@ test("APPROVAL_TTL_SECONDS: default one day, validated range", () => {
 
 test("EVENTS_* settings: defaults per chain, validated", () => {
   assert.deepEqual({ ...loadConfig(base).events }, { startBlock: null, chunkSize: 5000, pollMs: 4000, confirmations: 2 });
-  assert.equal(loadConfig({ ...base, CHAIN_ID: "31337", RPC_URL: "http://127.0.0.1:8545" }).events.confirmations, 0);
   assert.equal(loadConfig({ ...base, EVENTS_START_BLOCK: "123", EVENTS_CHUNK_SIZE: "2000" }).events.startBlock, 123);
   for (const [k, v] of [["EVENTS_CHUNK_SIZE", "0"], ["EVENTS_START_BLOCK", "-1"], ["EVENTS_POLL_MS", "fast"], ["EVENTS_CONFIRMATIONS", "1.5"]]) failsWith({ ...base, [k]: v }, new RegExp(k));
+});
+
+// Loading a 31337 config needs the Anvil deployment file, so this one skips like the other Anvil tests without it.
+const noAnvilDeployment = existsSync(new URL("../../contracts/deployments/31337.json", import.meta.url)) ? false : "contracts/deployments/31337.json missing (run Deploy.s.sol on Anvil)";
+test("EVENTS_CONFIRMATIONS defaults to 0 on Anvil", { skip: noAnvilDeployment }, () => {
+  assert.equal(loadConfig({ ...base, CHAIN_ID: "31337", RPC_URL: "http://127.0.0.1:8545" }).events.confirmations, 0);
 });
