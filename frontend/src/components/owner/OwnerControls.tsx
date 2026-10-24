@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createChainReads } from '../../chain/reads'
 import { explainError } from '../../chain/approval'
 import { ownerGate, runOwnerTx, type OwnerCall, type OwnerTxState } from '../../chain/ownerControls'
+import { flowGuard } from '../../chain/wallet'
 import { ABI, type Deployment } from '../../config'
 import { useOwnerWallet } from '../../hooks/useOwnerWallet'
 import { onWalletRefresh, requestWalletRefresh } from '../../lib/refresh'
@@ -44,7 +45,8 @@ export function OwnerControls({ deployment, agent, blocked }: { deployment: Depl
       onState(s)
       return s
     }
-    const end = await runOwnerTx({ publicClient: reads.client, walletClient, owner: state.account }, call, onState)
+    const guard = flowGuard(wallet!, () => blocked)
+    const end = await runOwnerTx({ publicClient: reads.client, walletClient, owner: state.account, guard }, call, onState)
     if (end.phase === 'done' || end.phase === 'noEvent' || end.phase === 'reverted') requestWalletRefresh()
     return end
   }, [wallet, reads, state, blocked])

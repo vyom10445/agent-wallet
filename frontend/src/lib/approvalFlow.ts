@@ -18,6 +18,7 @@ export type FlowState =
   | { phase: 'checking' }
   | { phase: 'mismatch'; mismatches: Mismatch[]; rebuilt: Rebuilt }
   | { phase: 'refused'; reason: string }
+  | { phase: 'cancelled'; reason: string }
   | { phase: 'simulating' }
   | { phase: 'simulateFailed'; reason: string }
   | { phase: 'awaitingWallet' }
@@ -50,6 +51,11 @@ export type SignContext = {
   onState: (s: FlowState) => void
   /** Called when the request on the backend changed (verified): reload it, refresh the dashboard. */
   onDone?: () => void
+  /**
+   * Checked before the simulation and again right before the wallet prompt: a reason string cancels the flow (the
+   * account or network changed, the owner check no longer passes, startup checks failed). null means go on.
+   */
+  guard?: () => string | null
 }
 
 /** Runs the whole sequence once. Resolves with the final state; never throws. */
@@ -81,6 +87,12 @@ export async function runSigning(ctx: SignContext): Promise<FlowState> {
   // 2. The owner's max price.
   const max = checkMaxPrice(rebuilt.price, ctx.maxPriceText)
   if (!max.ok) return step({ phase: 'refused', reason: max.reason })
+  const stop = (): FlowState | null => {
+    const reason = ctx.guard?.() ?? null
+    return reason ? step({ phase: 'cancelled', reason }) : null
+  }
+  const early = stop()
+  if (early) return early
 
   // 3. Simulate from the owner.
   step({ phase: 'simulating' })
@@ -92,6 +104,8 @@ export async function runSigning(ctx: SignContext): Promise<FlowState> {
   }
 
   // 4. The wallet prompt. From here on there is at most one transaction.
+  const late = stop()
+  if (late) return late
   step({ phase: 'awaitingWallet' })
   let txHash: Hash
   try {

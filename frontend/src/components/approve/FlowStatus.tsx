@@ -3,6 +3,7 @@ import type { Check } from '../../api/types'
 import { safeExplorerUrl } from '../../lib/requestStatus'
 import { canRetryVerify, type FlowState } from '../../lib/approvalFlow'
 import { MismatchList } from './ApprovalDetails'
+import { inert } from '../../lib/text'
 
 const txLink = (hash: string, chainId: number) => (chainId === 84532 ? safeExplorerUrl(`https://sepolia.basescan.org/tx/${hash}`) : null)
 
@@ -14,6 +15,7 @@ export function FlowStatus({ flow, chainId, onRetryVerify }: { flow: FlowState; 
       {flow.phase === 'checking' && <p>Re-reading the request and the chain…</p>}
       {flow.phase === 'mismatch' && <MismatchList mismatches={flow.mismatches} />}
       {flow.phase === 'refused' && <div className="banner red" role="alert">Not signed: {flow.reason}</div>}
+      {flow.phase === 'cancelled' && <div className="banner red" role="alert" data-testid="cancelled">Cancelled before the wallet prompt: {flow.reason} Nothing was sent.</div>}
       {flow.phase === 'simulating' && <p>Simulating executeBatch from the owner…</p>}
       {flow.phase === 'simulateFailed' && <div className="banner red" role="alert">The simulation failed, so nothing was sent: <code>{flow.reason}</code></div>}
       {flow.phase === 'awaitingWallet' && <p className="wait">Confirm the transaction in your wallet…</p>}
@@ -55,7 +57,7 @@ export function Checks({ checks }: { checks: readonly Check[] }) {
     <ul className="checks">
       {checks.map((c, i) => (
         <li key={`${c.name}-${i}`} className={c.ok ? 'ok' : 'fail'}>
-          {c.ok ? '✓' : '✗'} <code>{c.name}</code>{c.detail && <> · {c.detail}</>}
+          {c.ok ? '✓' : '✗'} <code>{inert(c.name)}</code>{c.detail && <> · {inert(c.detail)}</>}
         </li>
       ))}
     </ul>

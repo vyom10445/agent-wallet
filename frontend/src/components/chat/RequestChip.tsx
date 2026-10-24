@@ -7,6 +7,7 @@ import { shortHash } from '../../lib/format'
 import { requestErrorText } from '../../lib/messages'
 import { needsOwner, safeExplorerUrl, statusView } from '../../lib/requestStatus'
 import { approvalHref, requestHref } from '../../lib/routes'
+import { inert } from '../../lib/text'
 
 export function RequestChip({ id }: { id: string }) {
   const { request, error } = useRequestStatus(api, id)
@@ -29,7 +30,7 @@ export function RequestChipView({ id, request, errorText }: { id: string; reques
       {request.price && <> · {request.price.mUSDC} mUSDC</>}
       {v.paid && request.amountPaid && <> · paid {request.amountPaid.mUSDC} mUSDC</>}
       {request.error && (
-        <span className="chip-error"> · {request.error.code}: {requestErrorText(request.error.code)}</span>
+        <span className="chip-error"> · {inert(request.error.code)}: {inert(requestErrorText(request.error.code))}</span>
       )}
       {request.txHash && (
         <>

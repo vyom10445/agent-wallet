@@ -7,6 +7,7 @@ import { requestErrorText } from '../../lib/messages'
 import { isPaidStatus, needsOwner, safeExplorerUrl, statusView } from '../../lib/requestStatus'
 import { approvalHref } from '../../lib/routes'
 import { ProofBadge } from '../ProofBadge'
+import { inert, inertOrNull } from '../../lib/text'
 
 const PRECHECK: Record<string, string> = {
   AGENT_OK: "Within the agent's limits",
@@ -31,7 +32,7 @@ export function RequestDetailView({ request: r, now, errorText }: { request: Pur
       <Section title="Summary">
         <Row label="Status"><code>{r.status}</code></Row>
         <Row label="Credits">{r.credits}</Row>
-        <Row label="Agent's reason (untrusted)"><span className="untrusted">{r.reason ?? '—'}</span></Row>
+        <Row label="Agent's reason (untrusted)"><span className="untrusted">{inertOrNull(r.reason) ?? '—'}</span></Row>
         <Row label="Price (quote at pre-check)">{r.price ? `${r.price.mUSDC} mUSDC (${r.price.base})` : '—'}</Row>
         <Row label="Amount paid">{r.amountPaid ? `${r.amountPaid.mUSDC} mUSDC (${r.amountPaid.base})` : '—'}</Row>
         <Row label="Purchase id">{r.purchaseId ?? '—'}</Row>
@@ -42,9 +43,9 @@ export function RequestDetailView({ request: r, now, errorText }: { request: Pur
 
       {r.error && (
         <Section title="Error">
-          <Row label="Code"><code>{r.error.code}</code></Row>
-          <Row label="Meaning">{requestErrorText(r.error.code)}</Row>
-          <Row label="Decoded reason"><code className="wrap">{r.error.message ?? '—'}</code></Row>
+          <Row label="Code"><code>{inert(r.error.code)}</code></Row>
+          <Row label="Meaning">{inert(requestErrorText(r.error.code))}</Row>
+          <Row label="Decoded reason"><code className="wrap">{inertOrNull(r.error.message) ?? '—'}</code></Row>
         </Section>
       )}
 
@@ -66,7 +67,7 @@ export function RequestDetailView({ request: r, now, errorText }: { request: Pur
           <ul className="checks">
             {r.proofChecks!.map((c, i) => (
               <li key={`${c.name}-${i}`} className={c.ok ? 'ok' : 'fail'}>
-                {c.ok ? '✓' : '✗'} <code>{c.name}</code>{c.detail && <> · <span>{c.detail}</span></>}
+                {c.ok ? '✓' : '✗'} <code>{c.name}</code>{c.detail && <> · <span>{inert(c.detail)}</span></>}
               </li>
             ))}
           </ul>

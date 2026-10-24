@@ -3,6 +3,7 @@
 import type { DecodedCall, Mismatch, Rebuilt } from '../../chain/approval'
 import { amountText } from '../../chain/approval'
 import { formatTime, shortAddress } from '../../lib/format'
+import { inert } from '../../lib/text'
 
 export function ApprovalDetails({ rebuilt, wallet }: { rebuilt: Rebuilt; wallet: string }) {
   return (
@@ -51,7 +52,7 @@ export function MismatchList({ mismatches }: { mismatches: Mismatch[] }) {
         <thead><tr><th>Field</th><th>Backend sent</th><th>Chain / address book</th></tr></thead>
         <tbody>
           {mismatches.map((m) => (
-            <tr key={m.field}><td>{m.field}</td><td><code>{m.backend}</code></td><td><code>{m.chain}</code></td></tr>
+            <tr key={m.field}><td>{m.field}</td><td><code>{inert(m.backend, 300)}</code></td><td><code>{m.chain}</code></td></tr>
           ))}
         </tbody>
       </table>

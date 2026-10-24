@@ -5,6 +5,7 @@ import type { ToolCall } from '../../api/types'
 import { formatTime } from '../../lib/format'
 import type { UiMessage } from '../../lib/chat'
 import { RequestChip } from './RequestChip'
+import { inert } from '../../lib/text'
 
 export function MessageBubble({ message, Chip = RequestChip }: { message: UiMessage; Chip?: (p: { id: string }) => ReactNode }) {
   const t = formatTime(message.createdAt)
@@ -19,7 +20,7 @@ export function MessageBubble({ message, Chip = RequestChip }: { message: UiMess
           </span>
         )}
       </div>
-      <div className="msg-text">{message.content}</div>
+      <div className="msg-text">{inert(message.content)}</div>
       {message.meta && message.meta.toolCalls.length > 0 && <ToolCalls calls={message.meta.toolCalls} />}
       {message.requestIds.length > 0 && (
         <div className="chips">
@@ -38,7 +39,7 @@ function ToolCalls({ calls }: { calls: ToolCall[] }) {
       <ol>
         {calls.map((c, i) => (
           <li key={i}>
-            <code>{c.name}</code>(<code>{JSON.stringify(c.args)}</code>) → <code>{JSON.stringify(c.result)}</code>
+            <code>{inert(c.name)}</code>(<code>{inert(JSON.stringify(c.args))}</code>) → <code>{inert(JSON.stringify(c.result))}</code>
           </li>
         ))}
       </ol>

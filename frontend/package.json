@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:security": "vitest run test/security",
     "check:setup": "node scripts/check-setup.mjs",
     "scan:keys": "node scripts/scan-keys.mjs"
   },

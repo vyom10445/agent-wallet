@@ -1,6 +1,7 @@
 // Owner controls (pure view + local form state): setPolicy, revokeAgent and the merchant allowance. Each action is
 // reviewed first: the decoded call is shown, and only "Confirm and open wallet" runs simulate → wallet → receipt → event.
-import { useState } from 'react'
+import { useRef, useState } from 'react'
+import { singleFlight } from '../../lib/singleFlight'
 import { formatUnits } from 'viem'
 import type { AgentInfo } from '../../chain/reads'
 import {
@@ -31,6 +32,7 @@ export function OwnerControlsPanel({ gate, deployment, agent, current, run, onRe
   const [pending, setPending] = useState<OwnerCall | null>(null)
   const [tx, setTx] = useState<OwnerTxState>({ phase: 'idle' })
   const [buildError, setBuildError] = useState<string | null>(null)
+  const flight = useRef(singleFlight())
 
   const info = current.state === 'ok' ? current.info : null
   const max = maxText ?? (info ? m(info.maxPerTx) : '1')
@@ -52,12 +54,14 @@ export function OwnerControlsPanel({ gate, deployment, agent, current, run, onRe
     }
   }
 
-  async function confirm() {
+  function confirm() {
     if (!pending || !gate.enabled || busy) return
     const call = pending
-    const end = await run(call, setTx)
-    setPending(null)
-    if (end.phase === 'done' && call.action.kind === 'revokeAgent') setRevokeText('')
+    void flight.current.run(async () => {
+      const end = await run(call, setTx)
+      setPending(null)
+      if (end.phase === 'done' && call.action.kind === 'revokeAgent') setRevokeText('')
+    })
   }
 
   const txUrl = 'txHash' in tx ? explorerTxUrl(deployment.chainId, tx.txHash) : null
@@ -129,7 +133,7 @@ export function OwnerControlsPanel({ gate, deployment, agent, current, run, onRe
           <strong>You are about to sign a normal transaction from the owner account:</strong>
           <CallView call={pending.decoded} />
           <p className="muted">Expected event after mining: {pending.expect.eventName}. Calldata <code className="wrap">{pending.data}</code></p>
-          <button className={pending.action.kind === 'revokeAgent' ? 'red' : 'primary'} data-testid="confirm-send" disabled={!gate.enabled || busy} onClick={() => void confirm()}>
+          <button className={pending.action.kind === 'revokeAgent' ? 'red' : 'primary'} data-testid="confirm-send" disabled={!gate.enabled || busy} onClick={confirm}>
             {busy ? 'Working…' : 'Confirm and open wallet'}
           </button>
           <button onClick={() => setPending(null)} disabled={busy}>Cancel</button>
@@ -165,6 +169,7 @@ function TxStatus({ tx, txUrl }: { tx: OwnerTxState; txUrl: string | null }) {
   const hash = 'txHash' in tx ? tx.txHash : null
   return (
     <div className="tx-status" data-phase={tx.phase}>
+      {tx.phase === 'cancelled' && <div className="banner red" role="alert">Cancelled before the wallet prompt: {tx.reason} Nothing was sent.</div>}
       {tx.phase === 'simulating' && <p>Simulating from the owner…</p>}
       {tx.phase === 'simulateFailed' && <div className="banner red" role="alert">The simulation failed, so nothing was sent: <code>{tx.reason}</code></div>}
       {tx.phase === 'awaitingWallet' && <p>Confirm the transaction in your wallet…</p>}

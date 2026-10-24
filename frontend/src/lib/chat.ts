@@ -2,6 +2,7 @@
 // sending is disabled, and a 409 BUSY from the backend keeps the user's text and says the agent is still working.
 import { isApiError } from '../api/client'
 import type { ChatMessage, ChatResponse, ToolCall } from '../api/types'
+import { inert } from './text'
 
 export const MAX_MESSAGE = 2000
 export const CONVERSATION_ID = /^[a-zA-Z0-9_-]{1,64}$/
@@ -58,7 +59,7 @@ export const initialChatState = (conversationId = DEFAULT_CONVERSATION): ChatSta
 
 export function toChatError(error: unknown): ChatError {
   if (isApiError(error)) return { code: String(error.code), text: error.message, detail: error.serverMessage }
-  return { code: 'UNKNOWN', text: 'Something went wrong.', detail: error instanceof Error ? error.message : String(error) }
+  return { code: 'UNKNOWN', text: 'Something went wrong.', detail: inert(error instanceof Error ? error.message : String(error)) }
 }
 
 const fromHistory = (m: ChatMessage): UiMessage => ({

@@ -6,6 +6,7 @@ import {
   newConversationId, validateMessage,
 } from '../../lib/chat'
 import { requestWalletRefresh } from '../../lib/refresh'
+import { singleFlight } from '../../lib/singleFlight'
 import { MessageBubble } from './MessageBubble'
 import './chat.css'
 
@@ -26,6 +27,8 @@ export function Chat() {
   const [touched, setTouched] = useState(false)
   const [newId, setNewId] = useState('')
   const endRef = useRef<HTMLDivElement>(null)
+  // One turn at a time even on a double click or Enter + click in the same tick (state.busy updates a render later).
+  const turn = useRef(singleFlight())
   const { conversationId } = state
 
   useEffect(() => {
@@ -45,9 +48,12 @@ export function Chat() {
   }, [state.messages.length])
 
   const invalid = validateMessage(text)
-  const send = async () => {
+  const send = () => {
     setTouched(true)
     if (invalid || state.busy) return
+    void turn.current.run(runTurn)
+  }
+  const runTurn = async () => {
     dispatch({ type: 'send', text, at: Date.now() })
     try {
       const response = await api.chat({ message: text, conversationId })

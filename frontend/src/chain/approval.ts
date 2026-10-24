@@ -13,6 +13,7 @@ import {
 import type { Address, Amount, OwnerApproval, PurchaseRequest } from '../api/types'
 import { ABI, USDC_DECIMALS, type Deployment } from '../config'
 import { parseMusdc } from '../lib/format'
+import { inert } from '../lib/text'
 
 export type ApprovalReads = { quote: (credits: number | bigint) => Promise<bigint>; allowance: () => Promise<bigint> }
 
@@ -128,6 +129,10 @@ export const isApprovable = (r: PurchaseRequest) => (r.status === 'needs_owner_a
 
 /** Readable revert reason, like explainError in integration/lib.mjs (custom errors decoded with all three ABIs). */
 export function explainError(err: unknown): string {
+  return inert(explainRaw(err))
+}
+
+function explainRaw(err: unknown): string {
   const errorAbi = [...ABI.wallet, ...ABI.usdc, ...ABI.merchant] as Abi
   if (err instanceof BaseError) {
     const reverted = err.walk((e) => e instanceof ContractFunctionRevertedError) as ContractFunctionRevertedError | null

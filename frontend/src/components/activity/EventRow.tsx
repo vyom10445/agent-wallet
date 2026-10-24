@@ -4,6 +4,7 @@ import { explorerTxUrl } from '../../config'
 import { EVENT_TYPE_LABEL, eventParts, labelView, safeRequestId } from '../../lib/activity'
 import { formatTime, shortHash } from '../../lib/format'
 import { requestHref } from '../../lib/routes'
+import { inert } from '../../lib/text'
 
 export function EventRow({ event, chainId }: { event: ChainEvent; chainId: number }) {
   const label = labelView(event.label)
@@ -15,13 +16,13 @@ export function EventRow({ event, chainId }: { event: ChainEvent; chainId: numbe
   return (
     <tr data-type={event.type} data-label={label.text} className={failed ? 'failed' : undefined}>
       <td>
-        <strong>{EVENT_TYPE_LABEL[event.type] ?? String(event.type)}</strong>
-        <div className="muted mono">{String(event.type)}</div>
+        <strong>{EVENT_TYPE_LABEL[event.type] ?? inert(event.type, 100)}</strong>
+        <div className="muted mono">{inert(event.type, 100)}</div>
       </td>
       <td><span className={`who ${label.tone}`} data-who={label.text}>{label.text}</span></td>
       <td className="time" title={time?.utc}>
         {time ? time.local : '—'}
-        <div className="muted">block {String(event.blockNumber)}</div>
+        <div className="muted">block {inert(event.blockNumber, 30)}</div>
       </td>
       <td className="args">
         <div className="arg-list">
@@ -33,7 +34,7 @@ export function EventRow({ event, chainId }: { event: ChainEvent; chainId: numbe
         </div>
       </td>
       <td className="tx">
-        {txUrl ? <a href={txUrl} target="_blank" rel="noreferrer noopener" data-link="tx">{shortHash(tx)} ↗</a> : <code title={tx}>{shortHash(tx)}</code>}
+        {txUrl ? <a href={txUrl} target="_blank" rel="noreferrer noopener" data-link="tx">{shortHash(tx)} ↗</a> : <code title={inert(tx, 200)}>{inert(shortHash(tx), 100)}</code>}
       </td>
       <td>{requestId ? <a href={requestHref(requestId)} data-link="request"><code>{requestId}</code></a> : <span className="muted">—</span>}</td>
     </tr>

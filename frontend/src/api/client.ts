@@ -2,6 +2,7 @@
 // readable message (lib/messages.ts): a backend ErrorBody keeps its code, a failed fetch is NETWORK (backend not running,
 // or blocked by CORS: the browser cannot tell the two apart), a slow answer is TIMEOUT.
 import { httpErrorText, type ClientErrorCode } from '../lib/messages'
+import { inertOrNull } from '../lib/text'
 import type {
   ChatRequest, ChatResponse, Check, ErrorBody, EventsQuery, EventsResponse, Hash, Health, HttpErrorCode,
   MessagesResponse, PurchaseRequest, RejectResponse, RequestsQuery, RequestsResponse, VerifyResponse, WalletStatus,
@@ -20,7 +21,7 @@ export class ApiError extends Error {
     this.name = 'ApiError'
     this.code = code
     this.status = status
-    this.serverMessage = serverMessage
+    this.serverMessage = inertOrNull(serverMessage)
     this.details = details
   }
 

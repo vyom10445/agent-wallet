@@ -4,7 +4,7 @@ type Listener = (...args: unknown[]) => void
 export function mockProvider({ accounts = ['0x815d211D2E85E2C2526f0CC3bB1DEE11513C7b64'], chainId = 84532, knownChains = [1, 84532, 31337] } = {}) {
   const listeners = new Map<string, Set<Listener>>()
   const calls: { method: string; params?: unknown }[] = []
-  const state = { accounts, chainId, knownChains: new Set(knownChains), rejectConnect: false }
+  const state = { accounts, chainId, knownChains: new Set(knownChains), rejectConnect: false, txHash: `0x${'ab'.repeat(32)}`, sent: [] as unknown[] }
   const emit = (event: string, ...args: unknown[]) => listeners.get(event)?.forEach((l) => l(...args))
   const provider = {
     async request({ method, params }: { method: string; params?: unknown }) {
@@ -24,6 +24,10 @@ export function mockProvider({ accounts = ['0x815d211D2E85E2C2526f0CC3bB1DEE1151
           emit('chainChanged', `0x${id.toString(16)}`)
           return null
         }
+        case 'eth_sendTransaction':
+          // The only signing request this app sends. Recorded so tests can prove when it was (not) sent.
+          state.sent.push((params as unknown[])[0])
+          return state.txHash
         case 'wallet_addEthereumChain':
           state.knownChains.add(Number.parseInt((params as [{ chainId: string }])[0].chainId, 16))
           return null

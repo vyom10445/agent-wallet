@@ -122,6 +122,7 @@ export function decodeOwnerCall(data: Hex, d: Deployment, to: Address = d.wallet
 
 export type OwnerTxState =
   | { phase: 'idle' }
+  | { phase: 'cancelled'; reason: string }
   | { phase: 'simulating' }
   | { phase: 'simulateFailed'; reason: string }
   | { phase: 'awaitingWallet' }
@@ -137,6 +138,8 @@ export type OwnerTxDeps = {
   publicClient: Pick<PublicClient, 'simulateContract' | 'waitForTransactionReceipt'>
   walletClient: Pick<WalletClient, 'writeContract'>
   owner: Address
+  /** Checked before the simulation and right before the wallet prompt; a reason cancels (account/network changed). */
+  guard?: () => string | null
 }
 
 /** Simulate → wallet prompt → receipt → status and expected event. Resolves with the final state; never throws. */
@@ -145,6 +148,12 @@ export async function runOwnerTx(deps: OwnerTxDeps, call: OwnerCall, onState: (s
     onState(s)
     return s
   }
+  const stop = () => {
+    const reason = deps.guard?.() ?? null
+    return reason ? step({ phase: 'cancelled', reason }) : null
+  }
+  const early = stop()
+  if (early) return early
   step({ phase: 'simulating' })
   let request: unknown
   try {
@@ -154,6 +163,8 @@ export async function runOwnerTx(deps: OwnerTxDeps, call: OwnerCall, onState: (s
   } catch (e) {
     return step({ phase: 'simulateFailed', reason: explainError(e) })
   }
+  const late = stop()
+  if (late) return late
   step({ phase: 'awaitingWallet' })
   let txHash: Hash
   try {

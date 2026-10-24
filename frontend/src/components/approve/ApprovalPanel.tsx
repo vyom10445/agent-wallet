@@ -2,6 +2,8 @@
 // chain and compared with the backend's ownerApproval, the owner sets a max price, the batch is simulated, signed with
 // the injected wallet, mined, then proven with POST /approvals/:id/verify. Decline only marks the request rejected.
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { flowGuard } from '../../chain/wallet'
+import { singleFlight } from '../../lib/singleFlight'
 import { formatUnits, type Hash } from 'viem'
 import type { ApiClient } from '../../api/client'
 import type { PurchaseRequest } from '../../api/types'
@@ -18,6 +20,7 @@ import { ProofBadge } from '../ProofBadge'
 import { WalletConnect } from '../wallet/WalletConnect'
 import { ApprovalDetails, MismatchList } from './ApprovalDetails'
 import { FlowStatus } from './FlowStatus'
+import { inert } from '../../lib/text'
 
 export const TX_HASH = /^0x[0-9a-fA-F]{64}$/
 export const MAX_NOTE = 200
@@ -60,8 +63,15 @@ export function ApprovalPanel({ api, reads, deployment, requestId, blocked }: Pr
   const [pasted, setPasted] = useState('')
   const [note, setNote] = useState('')
   const [declining, setDeclining] = useState<{ busy: boolean; error: string | null }>({ busy: false, error: null })
-  // Synchronous guard on top of the disabled button: a double click can never open two wallet prompts.
-  const signing = useRef(false)
+  // Synchronous guards on top of the disabled buttons: a double click can never open two wallet prompts or send two
+  // verify / reject calls.
+  const signing = useRef(singleFlight())
+  const verifying = useRef(singleFlight())
+  const declineFlight = useRef(singleFlight())
+  const blockedRef = useRef(blocked)
+  useEffect(() => {
+    blockedRef.current = blocked
+  }, [blocked])
   const verifyAttempt = useRef(0)
 
   const [attempt, setAttempt] = useState(0)
@@ -102,38 +112,47 @@ export function ApprovalPanel({ api, reads, deployment, requestId, blocked }: Pr
   const ctxBase = { api, requestId, onState: setFlow, onDone }
 
   async function sign() {
-    if (signing.current || !canStartSigning(flow)) return
+    if (signing.current.running || verifying.current.running || !canStartSigning(flow)) return
     const walletClient = wallet?.walletClient()
-    if (!walletClient || walletState.status !== 'connected' || blocked) return
-    signing.current = true
+    if (!wallet || !walletClient || walletState.status !== 'connected' || blocked) return
+    // Switching account or network (or the startup checks failing) mid-flow cancels before the wallet prompt.
+    const guard = flowGuard(wallet, () => blockedRef.current)
     verifyAttempt.current = 1
-    try {
-      await runSigning({
+    await signing.current.run(() =>
+      runSigning({
         ...ctxBase,
         reads,
         deployment,
         maxPriceText: maxPrice,
+        guard,
         send: { publicClient: reads.client, walletClient, owner: walletState.account, deployment },
-      })
-    } finally {
-      signing.current = false
-    }
+      }),
+    )
   }
 
   function retryVerify() {
     if (!canRetryVerify(flow)) return
-    verifyAttempt.current = Math.max(verifyAttempt.current, 1) + 1
-    void verifyTx(ctxBase, flow.txHash, verifyAttempt.current)
+    const txHash = flow.txHash
+    void verifying.current.run(() => {
+      verifyAttempt.current = Math.max(verifyAttempt.current, 1) + 1
+      return verifyTx(ctxBase, txHash, verifyAttempt.current)
+    })
   }
 
   function verifyPasted() {
     const h = pasted.trim()
-    if (!TX_HASH.test(h) || isBusy(flow)) return
-    verifyAttempt.current = 1
-    void verifyTx(ctxBase, h as Hash, 1)
+    if (!TX_HASH.test(h) || isBusy(flow) || signing.current.running) return
+    void verifying.current.run(() => {
+      verifyAttempt.current = 1
+      return verifyTx(ctxBase, h as Hash, 1)
+    })
   }
 
-  async function decline() {
+  function decline() {
+    void declineFlight.current.run(doDecline)
+  }
+
+  async function doDecline() {
     if (note.length > MAX_NOTE || declining.busy) return
     if (!window.confirm('Decline this purchase? This only marks the request rejected: it moves no funds and changes nothing on chain.')) return
     setDeclining({ busy: true, error: null })
@@ -174,7 +193,7 @@ export function ApprovalPanel({ api, reads, deployment, requestId, blocked }: Pr
       <button onClick={reload} disabled={isBusy(flow)}>Reload</button>
     </div>
   )
-  const reason = request.reason ? <p className="reason">Agent's reason (untrusted): <span className="untrusted">{request.reason}</span></p> : null
+  const reason = request.reason ? <p className="reason">Agent's reason (untrusted): <span className="untrusted">{inert(request.reason)}</span></p> : null
 
   // Already settled: show it, never a sign button. Keep the flow result on screen if it came from this page.
   if (!isApprovable(request)) {
@@ -249,7 +268,7 @@ export function ApprovalPanel({ api, reads, deployment, requestId, blocked }: Pr
           <p className="muted">Marks the request rejected. It moves no funds and changes nothing on chain.</p>
           <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Optional note" aria-label="Decline note" maxLength={MAX_NOTE} />
           <span className="muted">{note.length}/{MAX_NOTE}</span>
-          <button onClick={() => void decline()} disabled={declining.busy || note.length > MAX_NOTE || isBusy(flow)}>{declining.busy ? 'Declining…' : 'Decline'}</button>
+          <button onClick={decline} disabled={declining.busy || note.length > MAX_NOTE || isBusy(flow)}>{declining.busy ? 'Declining…' : 'Decline'}</button>
           {declining.error && <div className="banner red" role="alert">Not declined: {declining.error}</div>}
         </details>
       )}

@@ -3,6 +3,7 @@
 // Every value comes from the backend's indexer and is shown as text only.
 import { EVENT_TYPES, type ChainEvent, type EventType, type Health } from '../api/types'
 import { formatAmount, formatWei, shortAddress } from './format'
+import { inert } from './text'
 
 export const EVENTS_PAGE = 50
 export const ACTIVITY_POLL_MS = 15_000
@@ -55,7 +56,7 @@ export function mergeNewest(rows: readonly ChainEvent[], newest: readonly ChainE
 }
 
 export type Part = { label: string; value: string; mono?: boolean }
-const s = (v: unknown) => (v === null || v === undefined ? '—' : typeof v === 'string' ? v : typeof v === 'object' ? JSON.stringify(v) : String(v))
+const s = (v: unknown) => (v === null || v === undefined ? '—' : inert(typeof v === 'string' ? v : typeof v === 'object' ? JSON.stringify(v) : String(v), 1000))
 const amount = (v: unknown) => (v && typeof v === 'object' && 'mUSDC' in v ? formatAmount(v as { base: string; mUSDC: string }) : s(v))
 
 /** "0x0" is the owner's nonce key; any other key is the 20-byte agent address. */

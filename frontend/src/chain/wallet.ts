@@ -268,6 +268,24 @@ export function createOwnerWallet({ provider: raw, expectedChainId, readOwner, s
 
 export type OwnerWallet = ReturnType<typeof createOwnerWallet>
 
+/**
+ * A guard for one signing flow, taken when the flow starts: it returns a reason to cancel when the account or network
+ * changed since then, when the owner check no longer passes, or when `blocked()` reports a startup problem.
+ */
+export function flowGuard(wallet: Pick<OwnerWallet, 'getState'>, blocked: () => string | null = () => null): () => string | null {
+  const first = wallet.getState()
+  const start = first.status === 'connected' ? { account: first.account.toLowerCase(), chainId: first.chainId } : null
+  return () => {
+    const b = blocked()
+    if (b) return `Signing disabled: ${b}.`
+    const s = wallet.getState()
+    const c = signingCheck(s)
+    if (!start || s.status !== 'connected' || !c.canSign) return c.reason ?? 'The owner wallet is no longer connected.'
+    if (s.account.toLowerCase() !== start.account || s.chainId !== start.chainId) return 'The wallet account or network changed during the flow.'
+    return null
+  }
+}
+
 /** EIP-3085 parameters for wallet_addEthereumChain, from viem's chain definition (Base Sepolia: sepolia.base.org). */
 export function addChainParams(chain: Chain) {
   return {
