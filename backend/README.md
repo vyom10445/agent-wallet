@@ -1,6 +1,6 @@
 # Agent backend (P-2)
 
-The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline) and Phase 5 (policy pre-check) done.
+The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check) and Phase 6 (SQLite store) done.
 
 Addresses come from `../contracts/deployments/<chainId>.json` and ABIs from `../abi/`. Nothing is hard-coded,
 and nothing in `contracts/`, `abi/` or `integration/` is changed.
@@ -146,6 +146,23 @@ success is proven only on chain (UserOperationEvent.success + CreditsPurchased, 
 spend, the allowance and the agent list exactly as they were. It uses the Anvil owner key (#0) to approve, transfer
 and add/revoke a spare agent (#4) the way the real owner would.
 
+## Phase 6: SQLite store
+
+`src/db/` (`node:sqlite`, schema exactly as in `docs/BACKEND_API.md` §5):
+
+- `schema.js`: tables `purchase_requests`, `chat_messages`, `chain_events`, `indexer_state` (idempotent, `user_version` 1).
+- `store.js`: `createStore(openDb(path))`. `transition(id, to, fields)` is the only status writer and allows only the
+  lifecycle arrows. `succeeded` / `fulfilled_by_owner` need a tx hash and the decoded `CreditsPurchased`
+  (`purchase: { purchaseId, credits, amountPaid }`, credits must match). SQL `CHECK`s back this up, and
+  `tx_hash UNIQUE` stops one tx proving two requests. Amounts are base-unit strings in SQLite and bigint in JS.
+  Text that contains a secret from the env (`*PRIVATE_KEY*`, `*API_KEY*`, ...) is refused.
+- `recovery.js`: `resolveSubmitted()` reads the receipt of every `submitted` row: `succeeded` (with proof) or
+  `failed_onchain` (decoded reason); rows with no receipt yet stay `submitted`.
+- `index.js`: `startStore(config, reads)` = open + recover + expire overdue approvals. The server calls it on start.
+
+The database file is `DB_PATH` (default `data/agent.sqlite`, git-ignored). To start over, stop the backend and delete
+`backend\data\`.
+
 ## Keys
 
 - `.env` holds the **agent** key and a separate **submitter** key (a funded Base Sepolia EOA). Testnet throwaway keys only.
@@ -164,7 +181,7 @@ backend/
 │   ├── chain/reads.js        (Phase 3, done: read-only client and startup checks)
 │   ├── chain/userop.js       (Phase 4, done: UserOp builder, submitter, decoder, per-agent queue)
 │   ├── policy/precheck.js    (Phase 5, done: off-chain pre-check, advisory)
-│   ├── db/                   (Phase 6: node:sqlite schema and queries)
+│   ├── db/                   (Phase 6, done: schema, store, transitions, startup recovery)
 │   ├── agent/                (Phase 7: LLM loop and typed tools)
 │   ├── approvals/            (Phase 9: owner approval requests and on-chain verification)
 │   └── server.js             (HTTP API)
