@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check:setup": "node scripts/check-setup.mjs"
+    "check:setup": "node scripts/check-setup.mjs",
+    "scan:keys": "node scripts/scan-keys.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",

@@ -19,3 +19,4 @@
 .tabs a { padding: 6px 14px; text-decoration: none; color: inherit; border-bottom: 2px solid transparent; }
 .tabs a[aria-current='page'] { border-bottom-color: #3b82f6; font-weight: 600; }
 .placeholder { text-align: left; }
+.app-header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin-bottom: 8px; }
