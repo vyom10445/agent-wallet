@@ -5,8 +5,8 @@ import type { PurchaseRequest } from '../../api/types'
 import { useRequestStatus } from '../../hooks/useRequestStatus'
 import { shortHash } from '../../lib/format'
 import { requestErrorText } from '../../lib/messages'
-import { needsOwner, statusView } from '../../lib/requestStatus'
-import { approvalHref } from '../../lib/routes'
+import { needsOwner, safeExplorerUrl, statusView } from '../../lib/requestStatus'
+import { approvalHref, requestHref } from '../../lib/routes'
 
 export function RequestChip({ id }: { id: string }) {
   const { request, error } = useRequestStatus(api, id)
@@ -22,11 +22,10 @@ export function RequestChipView({ id, request, errorText }: { id: string; reques
     )
   }
   const v = statusView(request)
-  // The backend builds explorerUrl (BaseScan on 84532, null on Anvil); only an https BaseScan link is rendered as a link.
-  const tx = request.explorerUrl && /^https:\/\/sepolia\.basescan\.org\/tx\/0x[0-9a-fA-F]{64}$/.test(request.explorerUrl) ? request.explorerUrl : null
+  const tx = safeExplorerUrl(request.explorerUrl)
   return (
     <span className={`chip ${v.tone}`} data-request={id} data-status={request.status} title={v.hint}>
-      <code>{id}</code> <strong>{v.label}</strong> · {request.credits} credits
+      <a href={requestHref(id)}><code>{id}</code></a> <strong>{v.label}</strong> · {request.credits} credits
       {request.price && <> · {request.price.mUSDC} mUSDC</>}
       {v.paid && request.amountPaid && <> · paid {request.amountPaid.mUSDC} mUSDC</>}
       {request.error && (

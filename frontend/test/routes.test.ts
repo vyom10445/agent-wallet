@@ -9,3 +9,12 @@ describe('routes', () => {
     expect(parseRoute('#/approve/<script>')).toEqual({ tab: 'approve', requestId: null })
   })
 })
+
+describe('request routes', () => {
+  it('parses the requests list and detail', async () => {
+    const { requestHref } = await import('../src/lib/routes')
+    expect(parseRoute('#/requests')).toEqual({ tab: 'requests', requestId: null })
+    expect(parseRoute(requestHref('req_3f9a0c1b7d2e4a65'))).toEqual({ tab: 'requests', requestId: 'req_3f9a0c1b7d2e4a65' })
+    expect(parseRoute('#/requests/../../x')).toEqual({ tab: 'requests', requestId: null })
+  })
+})

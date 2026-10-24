@@ -35,3 +35,7 @@ export function statusView(r: Pick<PurchaseRequest, 'status' | 'proofVerified'>)
   }
   return { label: 'Could not check the chain', tone: 'grey', paid: false, hint: 'Recorded as paid, but the proof could not be checked right now. Not shown as paid.' }
 }
+
+/** Only an https BaseScan tx URL from the backend is rendered as a link (it is null on Anvil). */
+export const safeExplorerUrl = (url: string | null | undefined) =>
+  url && /^https:\/\/sepolia\.basescan\.org\/tx\/0x[0-9a-fA-F]{64}$/.test(url) ? url : null

@@ -154,7 +154,7 @@ describe('request chips', () => {
   it('shows submitted, failures with their code, and a link only for a real BaseScan URL', () => {
     expect(chip(request())).toContain('Sent, waiting for the chain')
     expect(chip(request({ status: 'failed_onchain', error: { code: 'ExceedsPerTxLimit', message: 'ExceedsPerTxLimit(1010000, 1000000)' } }))).toContain("Above the agent&#x27;s per-purchase limit")
-    expect(chip(request({ status: 'submitted', txHash: TX as `0x${string}`, explorerUrl: 'javascript:alert(1)' }))).not.toContain('href=')
+    expect(chip(request({ status: 'submitted', txHash: TX as `0x${string}`, explorerUrl: 'javascript:alert(1)' }))).not.toContain('javascript:')
     expect(chip(null)).toContain('loading')
   })
 })
