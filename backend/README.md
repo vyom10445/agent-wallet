@@ -1,6 +1,6 @@
 # Agent backend (P-2)
 
-The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)) and Phase 3 (config and read-only chain client) done. No writes yet.
+The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client) and Phase 4 (agent UserOp pipeline) done.
 
 Addresses come from `../contracts/deployments/<chainId>.json` and ABIs from `../abi/`. Nothing is hard-coded,
 and nothing in `contracts/`, `abi/` or `integration/` is changed.
@@ -108,6 +108,29 @@ npm run status
 Remove-Item Env:CHAIN_ID, Env:RPC_URL, Env:AGENT_PRIVATE_KEY, Env:SUBMITTER_PRIVATE_KEY   # back to .env
 ```
 
+## Phase 4: agent UserOp pipeline
+
+`src/chain/userop.js` ports `buildUserOp`, `signUserOp`, `submitUserOp`, `readOpResult`, `explainError` and
+`BUNDLE_GAS_LIMIT` from `integration/lib.mjs` unchanged in behaviour, and adds:
+
+- `createPurchaser(config, reads).purchaseCredits({ credits })`: the only entry point for the app. It accepts nothing
+  but an integer `credits` (1 to 10000), builds `purchase(credits, quote(credits))` and wraps it in
+  `executeAsAgent(agent, merchant, 0, inner)` itself.
+- A per-agent queue: one UserOp in flight per agent, nonce read right before each op (no AA25).
+- Funds checks before sending: the wallet's EntryPoint deposit must cover the op's prefund (else `AA21`, not sent),
+  a `DEPOSIT_LOW` warning below 0.001 ETH, and the submitter must have ETH for `BUNDLE_GAS_LIMIT` (else `SUBMITTER_LOW`).
+- Error codes: `errorCode()` returns `AA21`/`AA22`/`AA24`/`AA25`/`AA95`..., or the custom error name
+  (`ExceedsPerTxLimit`, `ExceedsDailyLimit`, `ERC20InsufficientAllowance`, ...), plus the `explainError` line.
+
+Result `outcome`: `succeeded` (UserOperationEvent.success and a CreditsPurchased from the merchant),
+`failed_onchain` (mined, op failed; `code` from UserOperationRevertReason), `not_sent` (nothing sent), or
+`submitted` (sent, receipt not read yet: `RECEIPT_TIMEOUT`).
+
+The Anvil tests top up the wallet's EntryPoint deposit themselves (Anvil gas is about 1000x Base Sepolia's, so the
+0.005 ETH default lasts only about a dozen ops). Each `test:anvil` run spends about 0.18 mUSDC of the agent's 5 mUSDC daily limit and the 10 mUSDC merchant allowance.
+If tests start failing with `ExceedsDailyLimit` or `ERC20InsufficientAllowance`, rerun ConfigureAgent (or restart
+Anvil and redeploy).
+
 ## Keys
 
 - `.env` holds the **agent** key and a separate **submitter** key (a funded Base Sepolia EOA). Testnet throwaway keys only.
@@ -124,7 +147,7 @@ backend/
 ├── src/
 │   ├── config.js             (Phase 3, done: env, chain, addresses, ABIs)
 │   ├── chain/reads.js        (Phase 3, done: read-only client and startup checks)
-│   ├── chain/                (Phase 4: UserOp builder, submitter, decoder; ported from integration/lib.mjs)
+│   ├── chain/userop.js       (Phase 4, done: UserOp builder, submitter, decoder, per-agent queue)
 │   ├── policy/               (Phase 5: off-chain pre-check)
 │   ├── db/                   (Phase 6: node:sqlite schema and queries)
 │   ├── agent/                (Phase 7: LLM loop and typed tools)

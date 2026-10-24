@@ -9,8 +9,8 @@
   "scripts": {
     "check": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/check-setup.mjs",
     "status": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/status.mjs",
-    "test": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env --test",
-    "test:anvil": "node --test test/config.test.mjs test/reads.anvil.test.mjs",
+    "test": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env --test --test-concurrency=1",
+    "test:anvil": "node --test --test-concurrency=1 test/config.test.mjs test/userop.test.mjs test/reads.anvil.test.mjs test/userop.anvil.test.mjs",
     "test:sepolia": "node --env-file-if-exists=.env --test test/reads.base-sepolia.test.mjs"
   },
   "dependencies": {
