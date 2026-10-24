@@ -1,0 +1,15 @@
+{
+  "name": "agent-wallet-backend",
+  "private": true,
+  "type": "module",
+  "description": "P-2 AI agent backend for the AgentWallet contracts (Node 22, viem, node:sqlite).",
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "scripts": {
+    "check": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/check-setup.mjs"
+  },
+  "dependencies": {
+    "viem": "2.57.11"
+  }
+}
