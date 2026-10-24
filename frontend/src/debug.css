@@ -1,7 +1,7 @@
 /* Startup checks panel (debug). */
 .debug { max-width: 920px; margin: 0 auto; padding: 16px 4px; text-align: left; overflow-wrap: anywhere; }
-.debug h1 { font-size: 1.4rem; margin: 0 0 4px; }
-.debug h2 { font-size: 1.05rem; margin: 22px 0 8px; color: var(--text-2); }
-.debug th, .debug td { border-bottom: 1px solid rgba(148, 163, 255, 0.08); padding: 7px 8px; vertical-align: top; text-align: left; }
+.debug h1 { font-family: var(--heading); font-size: 1.3rem; letter-spacing: -0.02em; margin: 0 0 4px; }
+.debug h2 { font-size: 1rem; margin: 22px 0 8px; color: var(--text-2); }
+.debug th, .debug td { border-bottom: 1px solid var(--border); padding: 7px 8px; vertical-align: top; text-align: left; }
 .debug th { width: 180px; }
 .debug code { font-size: 0.84em; }

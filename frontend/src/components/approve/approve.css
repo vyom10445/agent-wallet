@@ -1,58 +1,60 @@
 .approve { text-align: left; }
-.approve h2 { font-size: 1.5rem; margin: 0 0 14px; }
-.approve-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
-@media (min-width: 1100px) { .approve-body { grid-template-columns: minmax(0, 21em) minmax(0, 1fr); } }
+.approve h2 { margin: 0 0 20px; }
+.approve-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; }
+@media (min-width: 1100px) { .approve-body { grid-template-columns: minmax(0, 20em) minmax(0, 1fr); } }
 
 /* Waiting list */
-.approve .waiting { padding: 14px; border-radius: 16px; background: rgba(5, 6, 15, 0.45); border: 1px solid var(--glass-border); align-self: start; }
+.approve .waiting { padding: 14px; border-radius: var(--radius); background: var(--bg-subtle); border: 1px solid var(--border); align-self: start; }
 .approve .waiting-bar { display: flex; gap: 8px; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.approve .waiting-bar strong { font-family: var(--heading); font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--purple); }
+.approve .waiting-bar strong { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); }
 .approve .waiting ul { list-style: none; padding: 0; margin: 8px 0 0; display: grid; gap: 8px; }
-.approve .waiting li { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--glass-border); background: rgba(10, 12, 29, 0.6); transition: border-color 0.15s, box-shadow 0.15s; }
-.approve .waiting li:hover { border-color: rgba(139, 92, 246, 0.45); }
-.approve .waiting li.selected { border-color: rgba(139, 92, 246, 0.7); box-shadow: 0 0 24px -10px rgba(139, 92, 246, 0.9); background: rgba(139, 92, 246, 0.1); }
-.approve .waiting li a { color: var(--text); flex-basis: 100%; }
+.approve .waiting li { display: flex; flex-wrap: wrap; gap: 6px 8px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border); background: var(--bg); transition: border-color 0.12s; }
+.approve .waiting li:hover { border-color: var(--border-strong); }
+.approve .waiting li.selected { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.approve .waiting li a { flex-basis: 100%; text-decoration: none; font-weight: 500; }
 
 /* Panel */
 .approve .panel { min-width: 0; }
 .approve .approval-head { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin-bottom: 8px; }
-.approve .approval-head h3 { margin: 0; font-size: 1.1rem; }
+.approve .approval-head h3 { margin: 0; font-size: 1.15rem; }
 .approve .reason { margin: 6px 0 10px; color: var(--muted); }
+/* The decoded call: a white card on the lavender accent frame. */
 .approve .approval-details {
-  margin: 12px 0;
-  padding: 16px 18px;
-  border-radius: 16px;
-  background: linear-gradient(160deg, rgba(26, 30, 62, 0.75), rgba(10, 12, 29, 0.75));
-  border: 1px solid rgba(34, 211, 238, 0.28);
-  box-shadow: 0 0 40px -22px rgba(34, 211, 238, 0.9);
+  margin: 14px 0;
+  padding: 20px 22px;
+  border-radius: var(--radius);
+  background: var(--bg);
+  border: 1px solid var(--purple-line);
+  box-shadow: 0 0 0 6px var(--accent-soft);
 }
-.approve .approval-details dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 16px; margin: 12px 0 8px; }
+.approve .approval-details dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 7px 18px; margin: 12px 0 8px; }
 .approve .approval-details dt { color: var(--muted); }
 .approve .approval-details dd { margin: 0; }
-.approve .approval-details dd[data-field='price'] { font-family: var(--heading); font-size: 1.25rem; font-weight: 700; color: var(--cyan); }
-.approve .calls { margin: 10px 0; padding-left: 22px; display: grid; gap: 10px; }
-.approve .calls li { overflow-wrap: anywhere; padding: 8px 12px; border-radius: 10px; background: rgba(5, 6, 15, 0.5); border: 1px solid rgba(148, 163, 255, 0.1); }
-.approve .calls li::marker { color: var(--cyan); font-weight: 700; }
+.approve .approval-details dd[data-field='price'] { font-family: var(--heading); font-size: 1.3rem; font-weight: 600; letter-spacing: -0.02em; }
+.approve .calls { margin: 10px 0; padding-left: 22px; display: grid; gap: 8px; }
+.approve .calls li { overflow-wrap: anywhere; padding: 10px 14px; border-radius: 10px; background: var(--code-bg); border: 1px solid var(--border); font-family: var(--mono); font-size: 0.84rem; color: var(--accent-ink); }
+.approve .calls li code { background: none; border: none; padding: 0; color: var(--text-2); }
+.approve .calls li::marker { color: var(--muted); font-family: var(--sans); }
 .approve code.addr, .approve code.wrap { overflow-wrap: anywhere; word-break: break-all; }
 .approve .sign-box {
   display: flex;
   flex-wrap: wrap;
   gap: 10px 14px;
   align-items: center;
-  margin: 14px 0;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: rgba(5, 6, 15, 0.5);
-  border: 1px solid var(--glass-border);
+  margin: 16px 0;
+  padding: 16px 18px;
+  border-radius: var(--radius);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
 }
 .approve .sign-box .wallet { flex-basis: 100%; margin: 0; }
 .approve .sign-box label { display: inline-flex; gap: 8px; align-items: center; color: var(--text-2); }
 .approve .sign-box input { width: 8em; font-family: var(--mono); }
-.approve button.primary { padding: 9px 22px; font-size: 1rem; }
+.approve button.primary { padding: 9px 24px; font-size: 0.98rem; }
 .approve .flow .tx { overflow-wrap: anywhere; }
 .approve .wait { display: inline-flex; align-items: center; gap: 10px; color: var(--text-2); }
-.approve .wait::before { content: ''; width: 14px; height: 14px; border-radius: 50%; border: 2px solid rgba(139, 92, 246, 0.3); border-top-color: var(--cyan); animation: spin 0.8s linear infinite; }
-.approve details { margin: 12px 0; padding: 10px 14px; border-radius: 12px; border: 1px solid rgba(148, 163, 255, 0.1); background: rgba(5, 6, 15, 0.35); }
+.approve .wait::before { content: ''; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border-strong); border-top-color: var(--text); animation: spin 0.8s linear infinite; }
+.approve details { margin: 12px 0; padding: 10px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg); }
 .approve details input { width: min(100%, 42em); margin: 6px 6px 6px 0; font-family: var(--mono); }
-.approve details.decline { border-color: rgba(251, 113, 133, 0.25); }
+.approve details.decline { border-color: var(--red-line); }
 @keyframes spin { to { transform: rotate(360deg); } }

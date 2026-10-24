@@ -1,16 +1,17 @@
 .wallet { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; text-align: left; overflow-wrap: anywhere; }
-.wallet .account { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); }
-.wallet .badge.green { color: #05060f; background: linear-gradient(120deg, var(--green), var(--cyan)); border: none; box-shadow: 0 0 14px rgba(52, 211, 153, 0.45); }
+.wallet .account { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); font-size: 0.9rem; }
+.wallet .badge.green { font-weight: 600; }
 .wallet .error, .wallet .reason { color: var(--red); font-size: 0.86em; }
 .wallet.compact .reason { flex-basis: 100%; text-align: right; }
-.wallet.compact button:not(.link) { background: var(--grad); border: none; color: #05060f; font-weight: 700; box-shadow: var(--glow-violet); }
+.wallet.compact button:not(.link) { background: var(--text); border-color: var(--text); color: #fff; font-weight: 600; }
+.wallet.compact button:not(.link):hover:not(:disabled) { background: #26262e; }
 .wallet.compact .msg { color: var(--muted); font-size: 0.88em; }
 .wallet:not(.compact) {
-  margin: 0 0 14px;
+  margin: 0 0 24px;
   padding: 12px 16px;
-  border-radius: 14px;
-  border: 1px solid var(--glass-border);
-  background: rgba(10, 12, 29, 0.55);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
 }
-.wallet:not(.compact).ok { border-color: rgba(52, 211, 153, 0.45); box-shadow: 0 0 26px -10px rgba(52, 211, 153, 0.6); }
-.wallet:not(.compact).not-ok { border-color: rgba(251, 191, 36, 0.3); }
+.wallet:not(.compact).ok { border-color: var(--green-line); background: var(--green-bg); }
+.wallet:not(.compact).not-ok { border-color: var(--amber-line); background: var(--amber-bg); }

@@ -1,31 +1,29 @@
 .activity { text-align: left; }
-.activity-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 12px; }
-.activity-bar h2 { margin: 0; font-size: 1.5rem; }
-.activity .indexer { position: relative; border-radius: 12px; padding: 10px 16px 10px 18px; margin: 10px 0 14px; border: 1px solid var(--glass-border); background: var(--surface); }
-.activity .indexer::before { content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 3px; border-radius: 3px; background: var(--grey); }
-.activity .indexer.green { border-color: rgba(52, 211, 153, 0.3); }
-.activity .indexer.green::before { background: var(--green); box-shadow: 0 0 12px var(--green); }
-.activity .indexer.yellow { border-color: rgba(251, 191, 36, 0.35); background: rgba(251, 191, 36, 0.07); }
-.activity .indexer.yellow::before { background: var(--amber); box-shadow: 0 0 12px var(--amber); }
-.activity .indexer.red { border-color: rgba(251, 113, 133, 0.4); background: rgba(244, 63, 94, 0.08); }
-.activity .indexer.red::before { background: var(--red-strong); box-shadow: 0 0 12px var(--red-strong); }
+.activity-bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 14px; margin-bottom: 16px; }
+.activity-bar h2 { margin: 0 8px 0 0; }
+.activity .indexer { border-radius: var(--radius-sm); padding: 10px 16px; margin: 10px 0 18px; border: 1px solid var(--border); background: var(--bg-subtle); color: var(--text-2); }
+.activity .indexer.green { border-color: var(--green-line); background: var(--green-bg); color: #0a4a30; }
+.activity .indexer.yellow { border-color: var(--amber-line); background: var(--amber-bg); color: #5c3600; }
+.activity .indexer.red { border-color: var(--red-line); background: var(--red-bg); color: #6d1419; }
+.activity .indexer strong { color: inherit; }
 .activity .error-text code { white-space: pre-wrap; overflow-wrap: anywhere; }
 
-/* The feed as a timeline table */
-.activity .list { overflow-x: auto; border-radius: 14px; border: 1px solid var(--glass-border); background: rgba(5, 6, 15, 0.4); }
+/* The feed */
+.activity .list { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); }
 .activity table { font-size: 0.9em; }
-.activity th { padding: 10px 12px; border-bottom: 1px solid var(--glass-border); background: rgba(148, 163, 255, 0.04); }
-.activity td { padding: 10px 12px; border-bottom: 1px solid rgba(148, 163, 255, 0.06); vertical-align: top; }
-.activity tbody tr { transition: background 0.15s; }
-.activity tbody tr:hover { background: rgba(139, 92, 246, 0.07); }
-.activity tbody tr td:first-child { box-shadow: inset 3px 0 0 rgba(148, 163, 255, 0.15); }
-.activity tbody tr[data-type='CreditsPurchased'] td:first-child { box-shadow: inset 3px 0 0 var(--green); }
-.activity tbody tr[data-type='UserOperationEvent'] td:first-child { box-shadow: inset 3px 0 0 var(--blue); }
-.activity tbody tr[data-type='PolicySet'] td:first-child, .activity tbody tr[data-type='AgentRevoked'] td:first-child { box-shadow: inset 3px 0 0 var(--purple); }
-.activity tr.failed { background: rgba(244, 63, 94, 0.07); }
-.activity tr.failed td:first-child { box-shadow: inset 3px 0 0 var(--red-strong); }
+.activity th { padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--bg-subtle); }
+.activity td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.activity tbody tr:last-child td { border-bottom: none; }
+.activity tbody tr { transition: background 0.12s; }
+.activity tbody tr:hover { background: var(--bg-subtle); }
+.activity tbody tr td:first-child { box-shadow: inset 2px 0 0 transparent; }
+.activity tbody tr[data-type='CreditsPurchased'] td:first-child { box-shadow: inset 2px 0 0 #16a36a; }
+.activity tbody tr[data-type='UserOperationEvent'] td:first-child { box-shadow: inset 2px 0 0 var(--blue); }
+.activity tbody tr[data-type='PolicySet'] td:first-child, .activity tbody tr[data-type='AgentRevoked'] td:first-child { box-shadow: inset 2px 0 0 var(--purple); }
+.activity tr.failed { background: var(--red-bg); }
+.activity tr.failed td:first-child { box-shadow: inset 2px 0 0 var(--red); }
 .activity .arg-list { display: flex; flex-wrap: wrap; gap: 4px 14px; }
 .activity .arg-list code { overflow-wrap: anywhere; }
 .activity td.time, .activity td.tx { white-space: nowrap; }
 .activity .mono { font-family: var(--mono); font-size: 0.78em; }
-.activity .older { margin-top: 12px; }
+.activity .older { margin-top: 14px; }

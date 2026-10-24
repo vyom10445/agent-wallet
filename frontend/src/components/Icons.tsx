@@ -21,19 +21,12 @@ export function Icon({ name, size = 18, ...rest }: { name: IconName; size?: numb
   )
 }
 
-/** The brand mark: a hexagon (the smart wallet) with a spark (the agent) inside. */
-export function Logo({ size = 34 }: { size?: number }) {
+/** The brand mark: a rounded square (the smart wallet) with a spark (the agent) inside. */
+export function Logo({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden="true">
-      <defs>
-        <linearGradient id="aw-grad" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#22d3ee" />
-          <stop offset="0.55" stopColor="#8b5cf6" />
-          <stop offset="1" stopColor="#ec4899" />
-        </linearGradient>
-      </defs>
-      <path d="M20 2.5 35.2 11.25v17.5L20 37.5 4.8 28.75v-17.5Z" fill="rgba(139,92,246,0.14)" stroke="url(#aw-grad)" strokeWidth="2.2" strokeLinejoin="round" />
-      <path d="M21.6 9.5 13.5 21.5h5.8l-1 9 8.2-12.2h-5.9l1-8.8Z" fill="url(#aw-grad)" />
+    <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true">
+      <rect width="32" height="32" rx="9" fill="currentColor" />
+      <path d="M17.4 6.5 10 17.4h5.2l-.9 8.1 7.5-11h-5.3l.9-8Z" fill="#fff" />
     </svg>
   )
 }

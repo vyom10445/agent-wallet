@@ -37,8 +37,8 @@ function App() {
       : startup ? 'the backend is not ready (see Startup checks)' : 'checking the backend…'
   return (
     <OwnerWalletContext.Provider value={wallet}>
-    <main className="app">
-      <header className="app-header">
+    <header className="app-header">
+      <div className="app-header-inner">
         <a className="brand" href="#/chat" aria-label="Agent Wallet home">
           <Logo />
           <span className="brand-text">
@@ -46,6 +46,14 @@ function App() {
             <span className="tagline">AI spending, bounded on chain</span>
           </span>
         </a>
+        <nav className="tabs" aria-label="Sections">
+          {TABS.map((t) => (
+            <a key={t.tab} href={t.href} aria-current={route.tab === t.tab ? 'page' : undefined}>
+              <Icon name={t.icon} />
+              <span>{t.label}</span>
+            </a>
+          ))}
+        </nav>
         <div className="header-right">
           <span className={`net ${startup?.phase === 'ready' ? (startup.approvalAllowed ? 'ok' : 'warn') : startup ? 'down' : 'wait'}`} title="Backend and network (see Startup checks)">
             <span className="dot" />
@@ -55,15 +63,9 @@ function App() {
           </span>
           <WalletConnect compact blocked={blocked} />
         </div>
-      </header>
-      <nav className="tabs" aria-label="Sections">
-        {TABS.map((t) => (
-          <a key={t.tab} href={t.href} aria-current={route.tab === t.tab ? 'page' : undefined}>
-            <Icon name={t.icon} />
-            <span>{t.label}</span>
-          </a>
-        ))}
-      </nav>
+      </div>
+    </header>
+    <main className="app">
       <div hidden={route.tab !== 'chat'}><Chat /></div>
       <div hidden={route.tab !== 'dashboard'}><Dashboard /></div>
       {route.tab === 'requests' && <Requests selectedId={route.requestId} />}
@@ -85,7 +87,7 @@ function App() {
         <DebugPanel />
       </details>
       <footer className="app-footer">
-        <Icon name="bolt" size={14} />
+        <Logo size={16} />
         Limits are enforced by the AgentWallet contract, not by this page. Paid means proven on chain.
       </footer>
     </main>
