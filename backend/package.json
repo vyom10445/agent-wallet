@@ -12,9 +12,10 @@
     "check": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/check-setup.mjs",
     "status": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/status.mjs",
     "test": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env --test --test-concurrency=1",
-    "test:anvil": "node --test --test-concurrency=1 test/config.test.mjs test/userop.test.mjs test/precheck.test.mjs test/db.test.mjs test/agent.test.mjs test/reads.anvil.test.mjs test/userop.anvil.test.mjs test/precheck.anvil.test.mjs test/db.anvil.test.mjs test/agent.anvil.test.mjs test/server.anvil.test.mjs test/approvals.anvil.test.mjs",
+    "test:anvil": "node --test --test-concurrency=1 test/config.test.mjs test/userop.test.mjs test/precheck.test.mjs test/db.test.mjs test/agent.test.mjs test/reads.anvil.test.mjs test/userop.anvil.test.mjs test/precheck.anvil.test.mjs test/db.anvil.test.mjs test/agent.anvil.test.mjs test/server.anvil.test.mjs test/approvals.anvil.test.mjs test/events.anvil.test.mjs",
     "test:sepolia": "node --env-file-if-exists=.env --test test/reads.base-sepolia.test.mjs",
-    "chat": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/chat.mjs"
+    "chat": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/chat.mjs",
+    "events:check": "node --env-file-if-exists=.env scripts/events-check.mjs"
   },
   "dependencies": {
     "viem": "2.57.11"

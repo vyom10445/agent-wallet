@@ -68,3 +68,10 @@ test("APPROVAL_TTL_SECONDS: default one day, validated range", () => {
   assert.equal(loadConfig({ ...base, APPROVAL_TTL_SECONDS: "3600" }).approvalTtlSeconds, 3600);
   for (const bad of ["abc", "10", "1.5", "9999999"]) failsWith({ ...base, APPROVAL_TTL_SECONDS: bad }, /APPROVAL_TTL_SECONDS/);
 });
+
+test("EVENTS_* settings: defaults per chain, validated", () => {
+  assert.deepEqual({ ...loadConfig(base).events }, { startBlock: null, chunkSize: 5000, pollMs: 4000, confirmations: 2 });
+  assert.equal(loadConfig({ ...base, CHAIN_ID: "31337", RPC_URL: "http://127.0.0.1:8545" }).events.confirmations, 0);
+  assert.equal(loadConfig({ ...base, EVENTS_START_BLOCK: "123", EVENTS_CHUNK_SIZE: "2000" }).events.startBlock, 123);
+  for (const [k, v] of [["EVENTS_CHUNK_SIZE", "0"], ["EVENTS_START_BLOCK", "-1"], ["EVENTS_POLL_MS", "fast"], ["EVENTS_CONFIRMATIONS", "1.5"]]) failsWith({ ...base, [k]: v }, new RegExp(k));
+});

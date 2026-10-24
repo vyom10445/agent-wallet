@@ -1,7 +1,6 @@
 // HTTP API from docs/BACKEND_API.md §4 (v1), on node:http. Binds to 127.0.0.1 only.
 // Implemented: GET /health, POST /agent/chat, GET /agent/messages, GET /requests, GET /requests/:id,
-// POST /approvals/:id/verify, POST /approvals/:id/reject, GET /wallet/status.
-// Later phase: GET /events (Phase 10) answers 501 until then.
+// POST /approvals/:id/verify, POST /approvals/:id/reject, GET /wallet/status, GET /events (from the indexer tables).
 //
 // Start: npm start   (uses backend/.env)
 import { createServer as createHttpServer } from "node:http";
@@ -12,6 +11,7 @@ import { createReads, assertStartup, StartupError } from "./chain/reads.js";
 import { startStore, STATUSES, TransitionError } from "./db/index.js";
 import { buildAgent, BusyError, InputError, LlmError, createLlmFromEnv } from "./agent/index.js";
 import { buildOwnerApproval, verifyOwnerApproval, createProofs, VerifyError } from "./approvals/index.js";
+import { createIndexer, queryEvents, INDEXED_TYPES } from "./events/index.js";
 
 const EXPLORERS = { 84532: "https://sepolia.basescan.org/tx/" };
 const MAX_BODY = 16 * 1024;
@@ -56,8 +56,8 @@ const intParam = (v, { min, max, def }) => {
   return n;
 };
 
-/** deps: { config, reads, store, agent, env, llmMode, proofs? } */
-export function createApp({ config, reads, store, agent, env = process.env, llmMode = "fallback", proofs = createProofs({ config, reads }) }) {
+/** deps: { config, reads, store, agent, env, llmMode, proofs?, indexer? } */
+export function createApp({ config, reads, store, agent, env = process.env, llmMode = "fallback", proofs = createProofs({ config, reads }), indexer = null }) {
   const a = config.addresses;
   const minDeposit = BigInt(env.MIN_DEPOSIT_WEI || "1000000000000000");
   const minSubmitter = BigInt(env.MIN_SUBMITTER_WEI || "1000000000000000");
@@ -134,7 +134,7 @@ export function createApp({ config, reads, store, agent, env = process.env, llmM
   }
 
   const routes = [
-    ["GET", /^\/health$/, async () => [200, { ok: true, apiVersion: "1", chainId: config.chainId, wallet: a.wallet, agent: config.agent.address, llm: llmMode, dbPath: config.dbPath }]],
+    ["GET", /^\/health$/, async () => [200, { ok: true, apiVersion: "1", chainId: config.chainId, wallet: a.wallet, agent: config.agent.address, llm: llmMode, dbPath: config.dbPath, events: indexer ? indexer.status() : null }]],
     ["POST", /^\/agent\/chat$/, async (req) => {
       const body = await readJson(req);
       const r = await agent.chat({ message: body.message, conversationId: body.conversationId ?? "default" });
@@ -179,8 +179,11 @@ export function createApp({ config, reads, store, agent, env = process.env, llmM
       return [200, { request: { ...requestView(out.request), proofVerified: true }, checks: out.checks }];
     }],
     ["GET", /^\/wallet\/status$/, async () => [200, await walletStatus()]],
-    ["GET", /^\/events$/, async () => {
-      throw new HttpError(501, "NOT_IMPLEMENTED", "The event feed arrives in Phase 10");
+    ["GET", /^\/events$/, async (_req, _m, q) => {
+      const types = q.get("type") ? q.get("type").split(",").map((t) => t.trim()) : undefined;
+      if (types?.some((t) => !INDEXED_TYPES.includes(t))) throw new HttpError(400, "INVALID_INPUT", `type must be from ${INDEXED_TYPES.join(", ")}`);
+      const before = q.get("before") ? intParam(q.get("before"), { min: 0, max: Number.MAX_SAFE_INTEGER, def: undefined }) : undefined;
+      return [200, queryEvents(store.db, { types, before, limit: intParam(q.get("limit"), { min: 1, max: 200, def: 50 }) })];
     }],
   ];
 
@@ -223,12 +226,16 @@ export async function startServer(env = process.env) {
   const llm = createLlmFromEnv(env);
   const proofs = createProofs({ config, reads });
   const agent = buildAgent({ config, reads, store, env, llm, proofs });
-  const handler = createApp({ config, reads, store, agent, env, llmMode: llm ? "available" : "fallback", proofs });
+  const indexer = createIndexer({ config, reads, db: store.db });
+  indexer.state(); // fails fast if this database was indexed on another chain
+  const handler = createApp({ config, reads, store, agent, env, llmMode: llm ? "available" : "fallback", proofs, indexer });
   const server = createHttpServer(handler);
   const sweep = setInterval(() => store.expireDue(), 60_000);
   sweep.unref();
-  server.on("close", () => {
+  indexer.start(); // catches up in the background, then polls every EVENTS_POLL_MS
+  server.on("close", async () => {
     clearInterval(sweep);
+    await indexer.stop();
     store.close();
   });
   await new Promise((resolve) => server.listen(config.port, "127.0.0.1", resolve));
@@ -243,7 +250,7 @@ export async function startServer(env = process.env) {
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
   startServer().catch((e) => {
-    if (e instanceof ConfigError || e instanceof StartupError || e instanceof LlmError) {
+    if (e instanceof ConfigError || e instanceof StartupError || e instanceof LlmError || e?.name === "IndexerError") {
       console.error(`${e.name}: ${e.message}`);
       process.exit(1);
     }

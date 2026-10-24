@@ -331,6 +331,13 @@ Served from the indexer tables (Phase 10), not live log queries.
 - `label`: `"agent"` (UserOp nonce key = agent address, or an agent event), `"owner"` (nonce key 0, or a direct owner tx), `"other"`.
 - Filters: wallet events from the wallet address; `CreditsPurchased` with `buyer == wallet`; EntryPoint events with `sender == wallet`.
 - `requestId` links to `purchase_requests` by `userOpHash` or `txHash`, else `null`.
+- Additive (Phase 10): UserOp events also carry `nonceSequence` (`nonce & (2^64 - 1)`, decimal string);
+  `UserOperationRevertReason` carries `reason` (decoded, e.g. `ExceedsPerTxLimit(1010000, 1000000)`).
+  `nonceKey` is `"0x0"` for owner ops and the 20-byte agent address for agent ops.
+- `CreditsPurchased` takes the label of the UserOp it ran in; in a direct tx it is `"owner"` when `tx.from == wallet.owner()`.
+- `fromBlock` / `toBlock` are the oldest and newest block in this page (`null` when empty); `indexedToBlock` is the
+  indexer's `last_block`. `GET /health` adds `events: { indexedToBlock, lastError, polling }`.
+- Errors: `400 INVALID_INPUT` (unknown `type`, bad `limit` or `before`).
 
 ### Error codes
 

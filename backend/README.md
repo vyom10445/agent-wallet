@@ -1,6 +1,6 @@
 # Agent backend (P-2)
 
-The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check), Phase 6 (SQLite store), Phase 7 (AI agent), the HTTP server for H12 and Phase 9 (owner approvals) done.
+The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check), Phase 6 (SQLite store), Phase 7 (AI agent), the HTTP server for H12, Phase 9 (owner approvals) and Phase 10 (event indexer) done.
 
 Addresses come from `../contracts/deployments/<chainId>.json` and ABIs from `../abi/`. Nothing is hard-coded,
 and nothing in `contracts/`, `abi/` or `integration/` is changed.
@@ -204,7 +204,7 @@ missing LLM never blocks the demo: the planner takes over and `planner` in the r
 `src/server.js` (`npm start`): `node:http` on `127.0.0.1:PORT`, routes from `docs/BACKEND_API.md` §4:
 `GET /health`, `POST /agent/chat`, `GET /agent/messages`, `GET /requests`, `GET /requests/:id` (with `ownerApproval`
 rebuilt from chain for over-limit requests), `POST /approvals/:id/verify`, `POST /approvals/:id/reject`,
-`GET /wallet/status`. `GET /events` (Phase 10) returns `501 NOT_IMPLEMENTED` for now.
+`GET /wallet/status`, `GET /events`.
 On start it runs the config and chain checks, recovers `submitted` rows, expires overdue approvals and re-checks paid
 rows against the chain.
 
@@ -218,6 +218,15 @@ standing + quote)` and `purchase(credits, quote)`, read from chain each time). `
 before a request becomes `fulfilled_by_owner`. `proof.js` re-checks paid rows on read, so an edited database row shows
 `proofVerified: false`. The backend never signs owner approvals. Requests expire after `APPROVAL_TTL_SECONDS`.
 Checks, the Step 9.2 PowerShell run and the tests: [docs/PHASE9_OWNER_APPROVAL.md](docs/PHASE9_OWNER_APPROVAL.md).
+
+## Phase 10: event indexer
+
+`src/events/`: a poller started by `npm start` that indexes the wallet's `AgentSpent`, `AgentExecuted`, `AgentRevoked`,
+`PolicySet`, the merchant's `CreditsPurchased` for the wallet and the EntryPoint's `UserOperationEvent` /
+`UserOperationRevertReason` for the wallet into `chain_events`, in block chunks, resuming from `indexer_state.last_block`.
+Labels come from the UserOp nonce key (0 = owner, agent address = agent). `GET /events` serves the table.
+`npm run events:check` checks a running backend (paid requests have their labelled event, nothing duplicated across
+restarts). Settings and the PowerShell check: [docs/PHASE10_EVENTS.md](docs/PHASE10_EVENTS.md).
 
 ## Keys
 
@@ -233,6 +242,7 @@ backend/
 ├── scripts/status.mjs        (Phase 3)
 ├── scripts/chat.mjs          (Phase 7)
 ├── scripts/h12-live.mjs      (H12 live check)
+├── scripts/events-check.mjs  (Phase 10 acceptance check)
 ├── docs/H12_RUNBOOK.md       (H12 PowerShell steps)
 ├── docs/BACKEND_API.md       (Phase 2, frozen)
 ├── src/
@@ -243,7 +253,8 @@ backend/
 │   ├── db/                   (Phase 6, done: schema, store, transitions, startup recovery)
 │   ├── agent/                (Phase 7, done: LLM loop, typed tools, fallback planner)
 │   ├── approvals/            (Phase 9, done: owner approval payload, on-chain verify, proof re-check)
-│   └── server.js             (done: HTTP API, /events still 501)
+│   ├── events/               (Phase 10, done: indexer, nonce labels, GET /events feed)
+│   └── server.js             (done: HTTP API)
 ├── test/
 └── data/                     (SQLite file, git-ignored)
 ```

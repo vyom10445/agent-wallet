@@ -64,6 +64,14 @@ export function loadDeployment(chainId) {
   return Object.freeze(out);
 }
 
+function optionalInt(env, name, { min, max, def }) {
+  const raw = env[name]?.trim();
+  if (!raw) return def;
+  const n = Number(raw);
+  if (!/^\d+$/.test(raw) || !Number.isSafeInteger(n) || n < min || n > max) throw new ConfigError(`${name} must be a whole number from ${min} to ${max}, got "${raw}".`);
+  return n;
+}
+
 /**
  * Reads and validates the env. Throws ConfigError with a readable message on the first problem.
  * Returns a frozen object with no key strings: only viem accounts (address + signing functions).
@@ -96,6 +104,14 @@ export function loadConfig(env = process.env) {
     throw new ConfigError(`APPROVAL_TTL_SECONDS must be a whole number of seconds from 60 to 2592000 (30 days), got "${env.APPROVAL_TTL_SECONDS}".`);
   }
 
+  const events = Object.freeze({
+    // First block to index when the database has no indexer state yet. Default: the Deploy.s.sol broadcast block.
+    startBlock: optionalInt(env, "EVENTS_START_BLOCK", { min: 0, max: Number.MAX_SAFE_INTEGER, def: null }),
+    chunkSize: optionalInt(env, "EVENTS_CHUNK_SIZE", { min: 1, max: 100_000, def: 5000 }),
+    pollMs: optionalInt(env, "EVENTS_POLL_MS", { min: 0, max: 600_000, def: 4000 }), // 0 = no background polling
+    confirmations: optionalInt(env, "EVENTS_CONFIRMATIONS", { min: 0, max: 1000, def: chainId === 31337 ? 0 : 2 }),
+  });
+
   return Object.freeze({
     chainId,
     chain,
@@ -106,6 +122,7 @@ export function loadConfig(env = process.env) {
     dbPath: env.DB_PATH?.trim() || "data/agent.sqlite",
     port: Number(env.PORT?.trim() || 8787),
     approvalTtlSeconds, // owner approvals expire this long after the request is created
+    events,
     // Safe summary for logs: addresses only.
     toJSON() {
       return { chainId, wallet: addresses.wallet, agent: agent.address, submitter: submitter.address };
