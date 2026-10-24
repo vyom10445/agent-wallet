@@ -58,6 +58,18 @@ export function DashboardView({ mode, now, fetchedAt, loading, onRefresh }: Prop
       )}
       <WarningBanners warnings={s.warnings} validUntilIso={s.agent.validUntilIso} />
 
+      <div className="kpis">
+        <Kpi label="Wallet balance" value={s.wallet.balance.mUSDC} unit="mUSDC" tone="cyan" />
+        <Kpi label="Left to spend today" value={s.agent.remainingDailyAllowance.mUSDC} unit={`of ${s.agent.dailyLimit.mUSDC} mUSDC`} tone="violet" />
+        <Kpi label="Max per purchase" value={s.agent.maxPerTx.mUSDC} unit="mUSDC" tone="magenta" />
+        <Kpi label="Credits owned" value={String(s.wallet.credits)} unit={`at ${s.merchant.pricePerCredit.mUSDC} mUSDC each`} tone="green" />
+        <div className={`kpi agent-kpi ${validity.kind === 'valid' ? 'live' : 'down'}`}>
+          <span className="kpi-label">Agent</span>
+          <span className="kpi-value">{validity.kind === 'valid' ? 'Live' : validity.kind === 'revoked' ? 'Revoked' : 'Not valid'}</span>
+          <span className="kpi-unit">{validity.kind === 'valid' ? 'can buy within policy' : 'cannot buy'}</span>
+        </div>
+      </div>
+
       <div className="cards">
         <Card title="Agent">
           <Row label="Address"><Addr chainId={s.chainId} value={s.addresses.agent} /></Row>
@@ -104,6 +116,16 @@ export function DashboardView({ mode, now, fetchedAt, loading, onRefresh }: Prop
         Chain {s.chainId} · block {s.blockNumber} · next agent nonce {s.agent.nextNonce} · limits are enforced by the contract, not this page.
       </p>
     </section>
+  )
+}
+
+function Kpi({ label, value, unit, tone }: { label: string; value: string; unit: string; tone: 'cyan' | 'violet' | 'magenta' | 'green' }) {
+  return (
+    <div className={`kpi ${tone}`}>
+      <span className="kpi-label">{label}</span>
+      <span className="kpi-value">{value}</span>
+      <span className="kpi-unit">{unit}</span>
+    </div>
   )
 }
 

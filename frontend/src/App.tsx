@@ -5,12 +5,24 @@ import { DebugPanel } from './components/DebugPanel'
 import { Dashboard } from './components/dashboard/Dashboard'
 import { OwnerControls } from './components/owner/OwnerControls'
 import { Requests } from './components/requests/Requests'
+import { Icon, Logo, type IconName } from './components/Icons'
 import { WalletConnect } from './components/wallet/WalletConnect'
+import { SUPPORTED_CHAINS } from './config'
 import { useHashRoute } from './hooks/useHashRoute'
 import { OwnerWalletContext, useCreateOwnerWallet } from './hooks/useOwnerWallet'
 import { useStartup } from './hooks/useStartup'
 import './components/wallet/wallet.css'
 import './debug.css'
+import './app.css'
+
+const TABS: { tab: string; href: string; label: string; icon: IconName }[] = [
+  { tab: 'chat', href: '#/chat', label: 'Chat', icon: 'chat' },
+  { tab: 'dashboard', href: '#/dashboard', label: 'Dashboard', icon: 'dashboard' },
+  { tab: 'requests', href: '#/requests', label: 'Requests', icon: 'requests' },
+  { tab: 'approve', href: '#/approve', label: 'Approve', icon: 'approve' },
+  { tab: 'activity', href: '#/activity', label: 'Activity', icon: 'activity' },
+  { tab: 'owner', href: '#/owner', label: 'Owner', icon: 'owner' },
+]
 
 // Tabs by hash (#/chat, #/dashboard, #/requests[/<id>], #/approve[/<id>], #/activity, #/owner). Chat and dashboard screens stay mounted so the dashboard keeps polling and
 // refreshes after chat turns even while the chat is in front.
@@ -27,16 +39,30 @@ function App() {
     <OwnerWalletContext.Provider value={wallet}>
     <main className="app">
       <header className="app-header">
-        <strong>Agent Wallet</strong>
-        <WalletConnect compact blocked={blocked} />
+        <a className="brand" href="#/chat" aria-label="Agent Wallet home">
+          <Logo />
+          <span className="brand-text">
+            <strong>Agent Wallet</strong>
+            <span className="tagline">AI spending, bounded on chain</span>
+          </span>
+        </a>
+        <div className="header-right">
+          <span className={`net ${startup?.phase === 'ready' ? (startup.approvalAllowed ? 'ok' : 'warn') : startup ? 'down' : 'wait'}`} title="Backend and network (see Startup checks)">
+            <span className="dot" />
+            {startup?.phase === 'ready'
+              ? SUPPORTED_CHAINS[startup.health.chainId]?.name ?? `chain ${startup.health.chainId}`
+              : startup ? 'Backend offline' : 'Connecting…'}
+          </span>
+          <WalletConnect compact blocked={blocked} />
+        </div>
       </header>
-      <nav className="tabs">
-        <a href="#/chat" aria-current={route.tab === 'chat' ? 'page' : undefined}>Chat</a>
-        <a href="#/dashboard" aria-current={route.tab === 'dashboard' ? 'page' : undefined}>Dashboard</a>
-        <a href="#/requests" aria-current={route.tab === 'requests' ? 'page' : undefined}>Requests</a>
-        <a href="#/approve" aria-current={route.tab === 'approve' ? 'page' : undefined}>Approve</a>
-        <a href="#/activity" aria-current={route.tab === 'activity' ? 'page' : undefined}>Activity</a>
-        <a href="#/owner" aria-current={route.tab === 'owner' ? 'page' : undefined}>Owner</a>
+      <nav className="tabs" aria-label="Sections">
+        {TABS.map((t) => (
+          <a key={t.tab} href={t.href} aria-current={route.tab === t.tab ? 'page' : undefined}>
+            <Icon name={t.icon} />
+            <span>{t.label}</span>
+          </a>
+        ))}
       </nav>
       <div hidden={route.tab !== 'chat'}><Chat /></div>
       <div hidden={route.tab !== 'dashboard'}><Dashboard /></div>
@@ -58,6 +84,10 @@ function App() {
         <summary>Startup checks (debug)</summary>
         <DebugPanel />
       </details>
+      <footer className="app-footer">
+        <Icon name="bolt" size={14} />
+        Limits are enforced by the AgentWallet contract, not by this page. Paid means proven on chain.
+      </footer>
     </main>
     </OwnerWalletContext.Provider>
   )
