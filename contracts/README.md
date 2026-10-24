@@ -55,6 +55,13 @@ git submodule update --init --recursive
 
 or, outside git, re-run `forge install` with the tags above.
 
+## Phase 2 (interface freeze)
+
+- `docs/ACCOUNT_INSPECTION.md`: how SimpleAccount v0.7.0 and EntryPoint v0.7 work, bypass analysis, recommended extension.
+- `docs/INTERFACE.md`: the AgentWallet interface for P-2 and P-3 (draft until signed off).
+- `src/interfaces/IAgentWallet.sol` + `test/InterfaceFreeze.t.sol` (fails if a frozen signature changes).
+- `../abi/`: exported ABIs.
+
 ## Keys
 
 Use Anvil's built-in dev accounts locally. For Base Sepolia, use a throwaway testnet account stored in an

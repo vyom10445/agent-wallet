@@ -1,0 +1,647 @@
+[
+  {
+    "type": "function",
+    "name": "addAgent",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "validAfter",
+        "type": "uint48",
+        "internalType": "uint48"
+      },
+      {
+        "name": "validUntil",
+        "type": "uint48",
+        "internalType": "uint48"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "allowCall",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "selector",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      },
+      {
+        "name": "allowed",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "allowRecipient",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "allowed",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "executeAsAgent",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getAgent",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct IAgentWallet.AgentInfo",
+        "components": [
+          {
+            "name": "active",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "validAfter",
+            "type": "uint48",
+            "internalType": "uint48"
+          },
+          {
+            "name": "validUntil",
+            "type": "uint48",
+            "internalType": "uint48"
+          },
+          {
+            "name": "token",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "maxPerTx",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "dailyLimit",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "spentToday",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isAgentValid",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isCallAllowed",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "selector",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isRecipientAllowed",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "remainingDailyAllowance",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "revokeAgent",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setPolicy",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "maxPerTx",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "dailyLimit",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AgentAdded",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "validAfter",
+        "type": "uint48",
+        "indexed": false,
+        "internalType": "uint48"
+      },
+      {
+        "name": "validUntil",
+        "type": "uint48",
+        "indexed": false,
+        "internalType": "uint48"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "AgentExecuted",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "selector",
+        "type": "bytes4",
+        "indexed": true,
+        "internalType": "bytes4"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "AgentRevoked",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "AgentSpent",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "spentToday",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CallPermissionSet",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "selector",
+        "type": "bytes4",
+        "indexed": true,
+        "internalType": "bytes4"
+      },
+      {
+        "name": "allowed",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PolicySet",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "token",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "maxPerTx",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "dailyLimit",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RecipientPermissionSet",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "allowed",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AgentAlreadyActive",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AgentNotValid",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "CallNotAllowed",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "selector",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ExceedsDailyLimit",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "remaining",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ExceedsPerTxLimit",
+    "inputs": [
+      {
+        "name": "amount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxPerTx",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ForbiddenTarget",
+    "inputs": [
+      {
+        "name": "target",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidAgent",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidTokenCall",
+    "inputs": [
+      {
+        "name": "selector",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "InvalidValidityWindow",
+    "inputs": [
+      {
+        "name": "validAfter",
+        "type": "uint48",
+        "internalType": "uint48"
+      },
+      {
+        "name": "validUntil",
+        "type": "uint48",
+        "internalType": "uint48"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "NativeValueNotAllowed",
+    "inputs": [
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "RecipientNotAllowed",
+    "inputs": [
+      {
+        "name": "agent",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "recipient",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "UnauthorizedCaller",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  }
+]
