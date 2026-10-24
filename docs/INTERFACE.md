@@ -66,7 +66,7 @@ owner: wallet.allowRecipient(agent, merchant, true)                     // merch
 cost     = merchant.quote(500)                                            // 5_000_000 = 5 USDC
 callData = abi.encodeCall(IAgentWallet.executeAsAgent,
              (agent, merchant, 0, abi.encodeCall(MockMerchant.purchase, (500, cost))))
-userOp.nonce = entryPoint.getNonce(wallet, uint192(uint160(agent)))      // agent's own nonce key
+userOp.nonce = entryPoint.getNonce(wallet, uint192(uint160(agent)))      // agent's own nonce key (required since Phase 9)
 userOp.signature = agentKey.signMessage(entryPoint.getUserOpHash(userOp))
 ```
 

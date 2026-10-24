@@ -135,8 +135,8 @@ contract AgentWallet is SimpleAccount, IAgentWallet {
     // ERC-4337 validation
     // ------------------------------------------------------------------
 
-    /// @dev A UserOp calling executeAsAgent is valid only if it is signed by the agent named in its first argument
-    ///      and passes that agent's time-independent checks; the validity window is returned to the EntryPoint as
+    /// @dev A UserOp calling executeAsAgent is valid only if it is signed by the agent named in its first argument,
+    ///      uses nonce key uint192(agent), and passes that agent's time-independent checks; the validity window is returned to the EntryPoint as
     ///      validAfter/validUntil because ERC-7562 forbids reading block.timestamp during validation. Every other
     ///      UserOp goes to the unchanged SimpleAccount owner check. Only the wallet's own storage is read here.
     function _validateSignature(PackedUserOperation calldata userOp, bytes32 userOpHash)
@@ -154,6 +154,8 @@ contract AgentWallet is SimpleAccount, IAgentWallet {
 
         address signer = ECDSA.recover(MessageHashUtils.toEthSignedMessageHash(userOpHash), userOp.signature);
         if (signer != agent) return SIG_VALIDATION_FAILED;
+        // Agents must use their own nonce key so they cannot consume the owner's (key 0) or another agent's sequence.
+        if (userOp.nonce >> 64 != uint160(agent)) return SIG_VALIDATION_FAILED;
         if (_agentCallError(agent, target, value, data).length != 0) return SIG_VALIDATION_FAILED;
 
         AgentPolicy storage p = _policies[agent];
