@@ -3,6 +3,7 @@ import { Approve } from './components/approve/Approve'
 import { Chat } from './components/chat/Chat'
 import { DebugPanel } from './components/DebugPanel'
 import { Dashboard } from './components/dashboard/Dashboard'
+import { OwnerControls } from './components/owner/OwnerControls'
 import { Requests } from './components/requests/Requests'
 import { WalletConnect } from './components/wallet/WalletConnect'
 import { useHashRoute } from './hooks/useHashRoute'
@@ -11,7 +12,7 @@ import { useStartup } from './hooks/useStartup'
 import './components/wallet/wallet.css'
 import './debug.css'
 
-// Tabs by hash (#/chat, #/dashboard, #/requests[/<id>], #/approve[/<id>], #/activity). Chat and dashboard screens stay mounted so the dashboard keeps polling and
+// Tabs by hash (#/chat, #/dashboard, #/requests[/<id>], #/approve[/<id>], #/activity, #/owner). Chat and dashboard screens stay mounted so the dashboard keeps polling and
 // refreshes after chat turns even while the chat is in front.
 function App() {
   const route = useHashRoute()
@@ -35,6 +36,7 @@ function App() {
         <a href="#/requests" aria-current={route.tab === 'requests' ? 'page' : undefined}>Requests</a>
         <a href="#/approve" aria-current={route.tab === 'approve' ? 'page' : undefined}>Approve</a>
         <a href="#/activity" aria-current={route.tab === 'activity' ? 'page' : undefined}>Activity</a>
+        <a href="#/owner" aria-current={route.tab === 'owner' ? 'page' : undefined}>Owner</a>
       </nav>
       <div hidden={route.tab !== 'chat'}><Chat /></div>
       <div hidden={route.tab !== 'dashboard'}><Dashboard /></div>
@@ -44,6 +46,13 @@ function App() {
       )}
       {route.tab === 'activity' && (
         <Activity deployment={startup?.phase === 'ready' ? startup.deployment : null} chainId={startup?.phase === 'ready' ? startup.health.chainId : null} />
+      )}
+      {route.tab === 'owner' && (
+        <OwnerControls
+          deployment={startup?.phase === 'ready' ? startup.deployment : null}
+          agent={startup?.phase === 'ready' ? startup.health.agent : null}
+          blocked={blocked}
+        />
       )}
       <details className="debug-details">
         <summary>Startup checks (debug)</summary>
