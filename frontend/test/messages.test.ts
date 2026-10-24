@@ -34,6 +34,6 @@ describe('error text', () => {
 
   it('has a banner for every warning, and grey for unknown ones', () => {
     for (const w of WARNINGS) expect(['red', 'yellow']).toContain(warningText(w).tone)
-    expect(warningText('NEW_WARNING')).toEqual({ tone: 'grey', text: 'NEW_WARNING' })
+    expect(warningText('NEW_WARNING')).toEqual({ tone: 'grey', text: 'Backend warning NEW_WARNING', fix: null })
   })
 })

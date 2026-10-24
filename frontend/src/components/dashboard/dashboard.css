@@ -1,0 +1,30 @@
+.dashboard { text-align: left; overflow-wrap: anywhere; }
+.dashboard .toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin-bottom: 8px; }
+.dashboard .toolbar h2 { margin: 0; font-size: 1.3rem; }
+.dashboard .toolbar button { margin-left: auto; font: inherit; padding: 4px 12px; cursor: pointer; }
+.dashboard .banners { list-style: none; padding: 0; margin: 8px 0; display: grid; gap: 8px; }
+.dashboard .banner { border-radius: 8px; padding: 10px 14px; border: 1px solid; }
+.dashboard .banner.red { background: color-mix(in srgb, #d33 14%, transparent); border-color: #d33; }
+.dashboard .banner.yellow { background: color-mix(in srgb, #e0a800 16%, transparent); border-color: #c99600; }
+.dashboard .banner.grey { background: color-mix(in srgb, currentColor 8%, transparent); border-color: color-mix(in srgb, currentColor 30%, transparent); }
+.dashboard .banner .fix { margin-top: 4px; font-size: 0.92em; }
+.dashboard .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); gap: 12px; margin-top: 12px; }
+.dashboard .card { border: 1px solid color-mix(in srgb, currentColor 18%, transparent); border-radius: 10px; padding: 12px 14px; }
+.dashboard .card h3 { margin: 0 0 8px; font-size: 1rem; }
+.dashboard .row { display: flex; justify-content: space-between; gap: 12px; padding: 4px 0; border-bottom: 1px solid color-mix(in srgb, currentColor 8%, transparent); }
+.dashboard .row .label { opacity: 0.75; }
+.dashboard .row .value { text-align: right; }
+.dashboard .muted { opacity: 0.65; font-size: 0.88em; }
+.dashboard .base { font-size: 0.8em; }
+.dashboard .badge { display: inline-block; border-radius: 999px; padding: 0 8px; font-size: 0.88em; border: 1px solid; }
+.dashboard .badge.green { border-color: #2a2; background: color-mix(in srgb, #2a2 14%, transparent); }
+.dashboard .badge.red { border-color: #d33; background: color-mix(in srgb, #d33 14%, transparent); }
+.dashboard .countdown { font-weight: 600; color: #c26a00; }
+.dashboard .spend { margin-top: 10px; }
+.dashboard .bar { height: 12px; border-radius: 6px; background: color-mix(in srgb, currentColor 12%, transparent); overflow: hidden; }
+.dashboard .bar .fill { height: 100%; background: #3b82f6; }
+.dashboard .bar .fill.high { background: #d33; }
+.dashboard .spend-text { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; margin-top: 6px; }
+.dashboard .footer { margin-top: 12px; }
+/* Stale: every value greyed out so it can never be mistaken for current. */
+.dashboard.stale .cards, .dashboard.stale .banners { opacity: 0.45; filter: grayscale(1); }

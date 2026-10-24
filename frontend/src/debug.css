@@ -11,3 +11,7 @@
 .debug .banner.red { background: color-mix(in srgb, #d33 14%, transparent); border-color: #d33; }
 .debug .banner.green { background: color-mix(in srgb, #2a2 14%, transparent); border-color: #2a2; }
 .debug button { font: inherit; padding: 2px 10px; cursor: pointer; }
+.app { max-width: 1100px; margin: 0 auto; padding: 24px 16px; }
+.debug-details { margin-top: 24px; text-align: left; }
+.debug-details summary { cursor: pointer; }
+.debug-details .debug { padding: 8px 0; max-width: none; }

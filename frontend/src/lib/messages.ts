@@ -54,13 +54,38 @@ export const REQUEST_ERROR_TEXT: Readonly<Record<RequestErrorCode, string>> = {
   UNKNOWN: 'The transaction failed with an undecodable reason (raw data below).',
 }
 
-export const WARNING_TEXT: Readonly<Record<Warning, { tone: 'red' | 'yellow'; text: string }>> = {
-  AGENT_NOT_VALID: { tone: 'red', text: 'The agent is not valid now (expired, not started or revoked). It cannot buy anything until the owner renews it.' },
-  AGENT_EXPIRES_SOON: { tone: 'yellow', text: "The agent's permission ends in under 24 hours." },
-  DEPOSIT_LOW: { tone: 'yellow', text: "The wallet's EntryPoint gas deposit is low. Agent purchases may fail with AA21 until it is topped up." },
-  ALLOWANCE_LOW: { tone: 'yellow', text: 'The merchant allowance is below one maximum purchase. Larger purchases will need the owner.' },
-  BALANCE_LOW: { tone: 'yellow', text: "The wallet's mUSDC balance is below one maximum purchase." },
-  SUBMITTER_LOW: { tone: 'red', text: "The backend's gas payer is low on ETH. The agent cannot send purchases until it is funded." },
+// One banner per /wallet/status warning: what it means and the short fix (docs/PHASE12_FINAL.md §8 for ConfigureAgent).
+export const WARNING_TEXT: Readonly<Record<Warning, { tone: 'red' | 'yellow'; text: string; fix: string }>> = {
+  AGENT_NOT_VALID: {
+    tone: 'red',
+    text: 'The agent is not valid now (expired, not started or revoked). It cannot buy anything.',
+    fix: 'The owner must renew it: revoke the agent if needed, then rerun ConfigureAgent.',
+  },
+  AGENT_EXPIRES_SOON: {
+    tone: 'yellow',
+    text: "The agent's permission ends in under 24 hours.",
+    fix: 'Before the demo, revoke the agent and rerun ConfigureAgent to start a new 7-day window.',
+  },
+  DEPOSIT_LOW: {
+    tone: 'yellow',
+    text: "The wallet's EntryPoint gas deposit is low. Agent purchases may fail with AA21.",
+    fix: 'The owner must top up the EntryPoint deposit: rerun ConfigureAgent.',
+  },
+  ALLOWANCE_LOW: {
+    tone: 'yellow',
+    text: 'The merchant allowance is below one maximum purchase. Larger agent purchases will need the owner.',
+    fix: 'Rerun ConfigureAgent to top up the merchant allowance.',
+  },
+  BALANCE_LOW: {
+    tone: 'yellow',
+    text: "The wallet's mUSDC balance is below one maximum purchase.",
+    fix: "Rerun ConfigureAgent to top up the wallet's mUSDC.",
+  },
+  SUBMITTER_LOW: {
+    tone: 'red',
+    text: "The backend's gas payer is low on ETH. The agent cannot send purchases.",
+    fix: 'Send a little Base Sepolia ETH to the gas payer address shown on the dashboard.',
+  },
 }
 
 const has = <K extends string>(map: Readonly<Record<K, unknown>>, key: string): key is K => Object.hasOwn(map, key)
@@ -77,6 +102,6 @@ export function requestErrorText(code: string): string {
 }
 
 /** Banner for a /wallet/status warning. Unknown values are shown as their raw code in grey. */
-export function warningText(code: string): { tone: 'red' | 'yellow' | 'grey'; text: string } {
-  return has(WARNING_TEXT, code) ? WARNING_TEXT[code] : { tone: 'grey', text: code }
+export function warningText(code: string): { tone: 'red' | 'yellow' | 'grey'; text: string; fix: string | null } {
+  return has(WARNING_TEXT, code) ? WARNING_TEXT[code] : { tone: 'grey', text: `Backend warning ${code}`, fix: null }
 }
