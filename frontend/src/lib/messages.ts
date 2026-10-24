@@ -14,7 +14,7 @@ export const HTTP_ERROR_TEXT: Readonly<Record<HttpErrorCode | ClientErrorCode, s
   INVALID_INPUT: 'The request was not accepted.',
   NOT_FOUND: 'No such request (or endpoint).',
   WRONG_STATUS: "This request can't do that in its current status. Reload it.",
-  BUSY: 'The agent is still working on the previous message. Try again in a moment.',
+  BUSY: 'The agent is still working on the last message. Try again in a moment.',
   TX_ALREADY_USED: 'That transaction already proved another request. Each purchase can fulfil only one request.',
   TX_NOT_FOUND: 'Transaction not found on this network yet. Check the hash and network, or wait for it to be mined.',
   TX_REVERTED: 'That transaction reverted, so nothing was bought.',

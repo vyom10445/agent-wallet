@@ -15,3 +15,7 @@
 .debug-details { margin-top: 24px; text-align: left; }
 .debug-details summary { cursor: pointer; }
 .debug-details .debug { padding: 8px 0; max-width: none; }
+.tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
+.tabs a { padding: 6px 14px; text-decoration: none; color: inherit; border-bottom: 2px solid transparent; }
+.tabs a[aria-current='page'] { border-bottom-color: #3b82f6; font-weight: 600; }
+.placeholder { text-align: left; }

@@ -1,0 +1,42 @@
+.chat { text-align: left; }
+.chat-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.chat-bar h2 { margin: 0; font-size: 1.3rem; }
+.chat .new-conv { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.chat input, .chat textarea, .chat button { font: inherit; }
+.chat input { padding: 2px 8px; width: 12em; }
+.chat button { padding: 2px 10px; cursor: pointer; }
+.chat button.link { background: none; border: none; text-decoration: underline; padding: 0 0 0 8px; }
+.chat .note { margin: 6px 0 12px; }
+.chat .messages { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+.chat .msg { border-radius: 10px; padding: 8px 12px; max-width: 85%; border: 1px solid color-mix(in srgb, currentColor 15%, transparent); }
+.chat .msg.user { justify-self: end; background: color-mix(in srgb, #3b82f6 12%, transparent); }
+.chat .msg.assistant { justify-self: start; background: color-mix(in srgb, currentColor 5%, transparent); }
+.chat .msg.pending { opacity: 0.6; }
+.chat .msg-head { display: flex; gap: 8px; align-items: center; font-size: 0.85em; margin-bottom: 2px; }
+/* Plain text: keep the agent's line breaks, and wrap long hex strings (tx hashes, addresses). */
+.chat .msg-text { white-space: pre-wrap; overflow-wrap: anywhere; word-break: break-word; }
+.chat .tools { margin-top: 6px; font-size: 0.88em; }
+.chat .tools code { overflow-wrap: anywhere; }
+.chat .tools ol { margin: 4px 0; padding-left: 20px; }
+.chat .chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
+.chat .chip { display: inline-block; border-radius: 8px; padding: 2px 8px; border: 1px solid; font-size: 0.88em; overflow-wrap: anywhere; }
+.chat .chip.grey { border-color: color-mix(in srgb, currentColor 30%, transparent); }
+.chat .chip.green { border-color: #2a2; background: color-mix(in srgb, #2a2 12%, transparent); }
+.chat .chip.red { border-color: #d33; background: color-mix(in srgb, #d33 12%, transparent); }
+.chat .chip.orange { border-color: #d97706; background: color-mix(in srgb, #d97706 12%, transparent); }
+.chat .chip.blue { border-color: #3b82f6; background: color-mix(in srgb, #3b82f6 12%, transparent); }
+.chat .chip.purple { border-color: #8b5cf6; background: color-mix(in srgb, #8b5cf6 14%, transparent); }
+.chat .badge { border-radius: 999px; padding: 0 6px; border: 1px solid color-mix(in srgb, currentColor 30%, transparent); }
+.chat .badge.fallback { border-color: #d97706; }
+.chat .working { font-style: italic; }
+.chat .banner { border-radius: 8px; padding: 8px 12px; margin: 10px 0; border: 1px solid; }
+.chat .banner.red { background: color-mix(in srgb, #d33 14%, transparent); border-color: #d33; }
+.chat .banner.yellow { background: color-mix(in srgb, #e0a800 16%, transparent); border-color: #c99600; }
+.chat .composer { margin-top: 14px; display: grid; gap: 6px; }
+.chat textarea { width: 100%; box-sizing: border-box; padding: 8px; resize: vertical; }
+.chat .composer-row { display: flex; align-items: center; gap: 12px; }
+.chat .composer-row button { margin-left: auto; }
+.chat .counter { font-size: 0.85em; opacity: 0.7; }
+.chat .counter.over, .chat .field-error { color: #d33; font-size: 0.88em; }
+.chat .prompts { display: flex; flex-wrap: wrap; gap: 6px; }
+.chat .muted { opacity: 0.65; font-size: 0.88em; }
