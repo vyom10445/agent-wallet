@@ -1,6 +1,6 @@
 # Agent backend (P-2)
 
-The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check), Phase 6 (SQLite store), Phase 7 (AI agent), the HTTP server for H12, Phase 9 (owner approvals) and Phase 10 (event indexer) done.
+The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check), Phase 6 (SQLite store), Phase 7 (AI agent), the HTTP server for H12, Phase 9 (owner approvals), Phase 10 (event indexer) and Phase 11 (security suite) done.
 
 Addresses come from `../contracts/deployments/<chainId>.json` and ABIs from `../abi/`. Nothing is hard-coded,
 and nothing in `contracts/`, `abi/` or `integration/` is changed.
@@ -227,6 +227,15 @@ Checks, the Step 9.2 PowerShell run and the tests: [docs/PHASE9_OWNER_APPROVAL.m
 Labels come from the UserOp nonce key (0 = owner, agent address = agent). `GET /events` serves the table.
 `npm run events:check` checks a running backend (paid requests have their labelled event, nothing duplicated across
 restarts). Settings and the PowerShell check: [docs/PHASE10_EVENTS.md](docs/PHASE10_EVENTS.md).
+
+## Phase 11: security suite
+
+`npm run test:security` (Anvil): prompt injection (user message, merchant revert text, chain-read strings), self-escalation,
+tool argument abuse, ten parallel purchases, replay, chain mismatch, revocation and expiry, secrets grep over logs,
+responses, database and LLM prompts, and honest reporting of a mined failed op. It also drove five fixes: one purchase per
+message and only when the user asked, sanitized chain text, the daily budget re-checked inside the queue, a chain guard
+before signing, and a clean refusal of a pasted key. Coverage of every agent failure mode in `docs/PHASE11_DEBUGGING.md`:
+[docs/PHASE11_SECURITY.md](docs/PHASE11_SECURITY.md).
 
 ## Keys
 

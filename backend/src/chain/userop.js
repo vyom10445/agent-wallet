@@ -7,6 +7,7 @@
 import {
   createWalletClient, http, pad, toHex, encodeFunctionData, parseEventLogs, decodeErrorResult, BaseError,
   ContractFunctionRevertedError,
+  formatUnits,
 } from "viem";
 import { abi, allAbi } from "../config.js";
 
@@ -139,7 +140,14 @@ export function createPurchaser(config, reads, { walletClient, minDepositWei = D
     const base = { credits, price: null, nonce: null, userOpHash: null, txHash: null, blockNumber: null, actualGasCost: null, purchase: null, events: [], warnings: [] };
     const notSent = (code, message, extra = {}) => ({ ...base, ...extra, outcome: "not_sent", code, message });
     try {
+      // Never sign or send for another chain than the configured one (an op hashed for one chain is invalid on another).
+      const rpcChainId = await ctx.client.getChainId();
+      if (rpcChainId !== config.chainId) return notSent("CHAIN_MISMATCH", `The RPC is chain ${rpcChainId} but CHAIN_ID is ${config.chainId}. Nothing was signed or sent.`);
       const price = await reads.quote(credits);
+      // Re-read inside the per-agent queue: earlier ops in the queue may have used up today's budget since the pre-check.
+      // (Skipped for an agent that is not valid now: the EntryPoint then rejects the op with the exact AA24 / AA22 reason.)
+      const [remaining, valid] = await Promise.all([reads.remainingDailyAllowance(agent.address), reads.isAgentValid(agent.address)]);
+      if (valid && price > remaining) return notSent("ExceedsDailyLimit", `${formatUnits(price, 6)} mUSDC is more than the ${formatUnits(remaining, 6)} mUSDC left today. Nothing was sent.`, { price });
       const inner = encodeFunctionData({ abi: abi.merchant, functionName: "purchase", args: [BigInt(credits), price] });
       // Outer callData: executeAsAgent(agent, target, value = 0, data). The agent address MUST equal the signer.
       const callData = encodeFunctionData({ abi: abi.wallet, functionName: "executeAsAgent", args: [agent.address, config.addresses.merchant, 0n, inner] });

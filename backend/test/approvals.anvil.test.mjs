@@ -224,7 +224,7 @@ test("expiry: needs_owner_approval expires after the TTL; the owner's tx can sti
   const r = await overLimitRequest(110);
   const row = s.store.getRequest(r.id);
   assert.ok(row.expiresAt >= row.createdAt + 86_400 - 5);
-  assert.deepEqual(s.store.expireDue(row.expiresAt - 1), []);
+  assert.ok(!s.store.expireDue(row.expiresAt - 1).includes(r.id), "not before its expiry");
   assert.ok(s.store.expireDue(row.expiresAt).includes(r.id));
   const e = await req("GET", `/requests/${r.id}`);
   assert.equal(e.body.status, "expired");

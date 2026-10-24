@@ -58,6 +58,19 @@ function describeOther(name, r) {
   return "";
 }
 
+// A purchase needs the user's own words in this message: a buy verb, a confirmation, or the exact credit count.
+// So text injected through tool results (merchant or chain) cannot start a purchase the user did not ask for.
+const BUY_INTENT = /\b(buy|purchase|order|get|need|want|top[ -]?up|acquire|yes|ok(?:ay)?|sure|go ahead|do it|confirm|proceed)\b/i;
+
+/** null when the buy may run, else why not. At most one purchase per user message. */
+function buyGate(input, ctx, turn) {
+  if (turn.buys.some((b) => b?.requestId)) return "Only one purchase per message. Ask the user to send another message for another purchase.";
+  const credits = input && typeof input === "object" ? input.credits : undefined;
+  const saysCount = Number.isSafeInteger(credits) && new RegExp(`(^|[^0-9])${credits}([^0-9]|$)`).test(ctx.message ?? "");
+  if (!BUY_INTENT.test(ctx.message ?? "") && !saysCount) return "The user did not ask to buy credits in this message.";
+  return null;
+}
+
 /**
  * deps: { llm (null for none), tools (createTools), store, maxSteps?, historyLimit? }
  */
@@ -65,7 +78,8 @@ export function createAgent({ llm, tools, store, maxSteps = 6, historyLimit = 10
   const busy = new Set();
 
   async function runTool(name, input, ctx, turn) {
-    const { ok, input: clean, result } = await tools.run(name, input, ctx);
+    const refusal = name === "buy_credits" ? buyGate(input, ctx, turn) : null;
+    const { ok, input: clean, result } = refusal ? { ok: false, input: null, result: { error: "INVALID_INPUT", message: refusal } } : await tools.run(name, input, ctx);
     if (result?.requestId) turn.requestIds.push(result.requestId);
     turn.toolCalls.push({ name, args: clean ?? input, result: result?.requestId ? { requestId: result.requestId, status: result.status } : result?.error ? { error: result.error } : { ok } });
     if (name === "buy_credits") turn.buys.push(result);
@@ -108,7 +122,7 @@ export function createAgent({ llm, tools, store, maxSteps = 6, historyLimit = 10
       busy.add(conversationId);
       try {
         const text = message.trim();
-        const ctx = { conversationId };
+        const ctx = { conversationId, message: text };
         const turn = { requestIds: [], toolCalls: [], buys: [] };
         store.addChatMessage({ conversationId, role: "user", content: text });
 

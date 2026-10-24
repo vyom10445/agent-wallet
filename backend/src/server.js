@@ -8,7 +8,7 @@ import { pathToFileURL } from "node:url";
 import { formatUnits } from "viem";
 import { loadConfig, ConfigError, USDC_DECIMALS } from "./config.js";
 import { createReads, assertStartup, StartupError } from "./chain/reads.js";
-import { startStore, STATUSES, TransitionError } from "./db/index.js";
+import { startStore, STATUSES, TransitionError, SecretLeakError } from "./db/index.js";
 import { buildAgent, BusyError, InputError, LlmError, createLlmFromEnv } from "./agent/index.js";
 import { buildOwnerApproval, verifyOwnerApproval, createProofs, VerifyError } from "./approvals/index.js";
 import { createIndexer, queryEvents, INDEXED_TYPES } from "./events/index.js";
@@ -203,6 +203,7 @@ export function createApp({ config, reads, store, agent, env = process.env, llmM
     } catch (e) {
       let err = e;
       if (e instanceof VerifyError) err = new HttpError(e.status, e.code, e.message, e.checks ? { checks: e.checks } : undefined);
+      else if (e instanceof SecretLeakError) err = new HttpError(400, "INVALID_INPUT", "The message contains one of the backend's secret keys. It was not stored or sent anywhere.");
       else if (e instanceof InputError) err = new HttpError(400, "INVALID_INPUT", e.message);
       else if (e instanceof BusyError) err = new HttpError(409, "BUSY", e.message);
       else if (e instanceof TransitionError) err = new HttpError(409, "WRONG_STATUS", e.message);
@@ -222,7 +223,7 @@ export async function startServer(env = process.env) {
   const config = loadConfig(env);
   const reads = createReads(config);
   const startup = await assertStartup(config, reads);
-  const { store, recovered, expired } = await startStore(config, reads);
+  const { store, recovered, expired } = await startStore(config, reads, { env });
   const llm = createLlmFromEnv(env);
   const proofs = createProofs({ config, reads });
   const agent = buildAgent({ config, reads, store, env, llm, proofs });
