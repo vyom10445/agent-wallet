@@ -1,0 +1,24 @@
+[profile.default]
+src = "src"
+test = "test"
+script = "script"
+out = "out"
+libs = ["lib"]
+
+# Matches eth-infinitism/account-abstraction v0.7.0 (hardhat.config.ts):
+# solc 0.8.23, optimizer 1,000,000 runs. Do not bump without re-checking compatibility.
+solc_version = "0.8.23"
+evm_version = "shanghai"
+optimizer = true
+optimizer_runs = 1000000
+via_ir = false
+
+[rpc_endpoints]
+anvil = "http://127.0.0.1:8545"
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+
+[etherscan]
+base_sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api", chain = 84532 }
+
+[fmt]
+line_length = 120
