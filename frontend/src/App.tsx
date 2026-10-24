@@ -1,3 +1,4 @@
+import { Approve } from './components/approve/Approve'
 import { Chat } from './components/chat/Chat'
 import { DebugPanel } from './components/DebugPanel'
 import { Dashboard } from './components/dashboard/Dashboard'
@@ -9,7 +10,7 @@ import { useStartup } from './hooks/useStartup'
 import './components/wallet/wallet.css'
 import './debug.css'
 
-// Tabs by hash (#/chat, #/dashboard, #/requests[/<id>], #/approve/<id>). Both screens stay mounted so the dashboard keeps polling and
+// Tabs by hash (#/chat, #/dashboard, #/requests[/<id>], #/approve[/<id>]). Chat and dashboard screens stay mounted so the dashboard keeps polling and
 // refreshes after chat turns even while the chat is in front.
 function App() {
   const route = useHashRoute()
@@ -37,14 +38,7 @@ function App() {
       <div hidden={route.tab !== 'dashboard'}><Dashboard /></div>
       {route.tab === 'requests' && <Requests selectedId={route.requestId} />}
       {route.tab === 'approve' && (
-        <section className="placeholder">
-          <h2>Owner approval</h2>
-          <WalletConnect blocked={blocked} />
-          <p>
-            {route.requestId ? <>Request <code>{route.requestId}</code> needs the owner's signature. </> : null}
-            The signing screen comes next. Until then, sign with <code>script/OwnerApprovePurchase.s.sol</code>; nothing is bought before you do.
-          </p>
-        </section>
+        <Approve requestId={route.requestId} deployment={startup?.phase === 'ready' ? startup.deployment : null} blocked={blocked} />
       )}
       <details className="debug-details">
         <summary>Startup checks (debug)</summary>

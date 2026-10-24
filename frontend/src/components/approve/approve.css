@@ -1,0 +1,43 @@
+.approve { text-align: left; }
+.approve h2 { font-size: 1.3rem; margin: 0 0 10px; }
+.approve button, .approve input { font: inherit; }
+.approve button { padding: 2px 10px; cursor: pointer; }
+.approve button.primary { padding: 6px 16px; font-weight: 600; }
+.approve-body { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; }
+@media (min-width: 1100px) { .approve-body { grid-template-columns: minmax(0, 22em) minmax(0, 1fr); } }
+.approve .waiting ul { list-style: none; padding: 0; margin: 6px 0; display: grid; gap: 6px; }
+.approve .waiting li { display: flex; flex-wrap: wrap; gap: 4px 8px; padding: 6px 8px; border-radius: 6px; border: 1px solid color-mix(in srgb, currentColor 12%, transparent); }
+.approve .waiting li.selected { background: color-mix(in srgb, #3b82f6 10%, transparent); }
+.approve .waiting-bar { display: flex; gap: 8px; align-items: center; }
+.approve .approval-head { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; }
+.approve .approval-head h3 { margin: 0; font-size: 1.05rem; }
+.approve .status { border-radius: 6px; padding: 0 6px; border: 1px solid; font-size: 0.9em; }
+.approve .status.grey { border-color: color-mix(in srgb, currentColor 30%, transparent); }
+.approve .status.orange { border-color: #d97706; color: #d97706; }
+.approve .status.blue { border-color: #3b82f6; color: #3b82f6; }
+.approve .status.green { border-color: #16a34a; color: #16a34a; }
+.approve .status.red { border-color: #d33; color: #d33; }
+.approve .status.purple { border-color: #9333ea; color: #9333ea; }
+.approve .banner { border-radius: 8px; padding: 10px 14px; margin: 10px 0; border: 1px solid; }
+.approve .banner.red { background: color-mix(in srgb, #d33 14%, transparent); border-color: #d33; }
+.approve .banner.green { background: color-mix(in srgb, #16a34a 14%, transparent); border-color: #16a34a; }
+.approve .banner.grey { border-color: color-mix(in srgb, currentColor 30%, transparent); }
+.approve .banner table { border-collapse: collapse; margin-top: 6px; font-size: 0.9em; }
+.approve .banner td, .approve .banner th { text-align: left; padding: 3px 8px; vertical-align: top; word-break: break-all; }
+.approve .muted { opacity: 0.65; font-size: 0.88em; }
+.approve .field-error { color: #d33; font-size: 0.88em; }
+.approve .untrusted { white-space: pre-wrap; word-break: break-word; font-style: italic; }
+.approve .approval-details { border: 1px solid color-mix(in srgb, currentColor 15%, transparent); border-radius: 8px; padding: 8px 14px; margin: 10px 0; }
+.approve .approval-details dl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 4px 12px; }
+.approve .approval-details dt { opacity: 0.7; }
+.approve .approval-details dd { margin: 0; }
+.approve .calls li { margin: 4px 0; overflow-wrap: anywhere; }
+.approve code.addr, .approve code.wrap { overflow-wrap: anywhere; }
+.approve .sign-box { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 12px 0; }
+.approve .sign-box input { width: 9em; padding: 2px 8px; }
+.approve .checks { list-style: none; padding: 0; margin: 6px 0; }
+.approve .checks .ok { color: #16a34a; }
+.approve .checks .fail { color: #d33; }
+.approve .wait { font-style: italic; }
+.approve details { margin: 10px 0; }
+.approve details input { width: min(100%, 42em); padding: 2px 8px; margin-right: 6px; }
