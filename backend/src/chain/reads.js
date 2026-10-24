@@ -20,8 +20,9 @@ export function createReads(config, { publicClient } = {}) {
 
   const reads = {
     client,
+    addresses: a,
     chainId: () => client.getChainId(),
-    blockNumber: () => client.getBlockNumber(),
+    blockNumber: () => client.getBlockNumber({ cacheTime: 0 }),
 
     // AgentWallet
     owner: (b) => read(a.wallet, abi.wallet, "owner", [], b),
@@ -53,7 +54,7 @@ export function createReads(config, { publicClient } = {}) {
 
     /** Everything Status.s.sol prints plus the agent's permissions and nonce, all read at one block. */
     async snapshot(agent = agentAddress) {
-      const b = await client.getBlockNumber();
+      const b = await client.getBlockNumber({ cacheTime: 0 }); // fresh head, never a cached block number
       const [
         isV07, walletEp, factoryWallet, owner, merchantToken, balance, allowance, deposit, credits, purchaseCount, pricePerCredit,
         info, validNow, remaining, canPurchase, merchantAllowed, nonce,

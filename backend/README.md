@@ -1,6 +1,6 @@
 # Agent backend (P-2)
 
-The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client) and Phase 4 (agent UserOp pipeline) done.
+The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline) and Phase 5 (policy pre-check) done.
 
 Addresses come from `../contracts/deployments/<chainId>.json` and ABIs from `../abi/`. Nothing is hard-coded,
 and nothing in `contracts/`, `abi/` or `integration/` is changed.
@@ -131,6 +131,21 @@ The Anvil tests top up the wallet's EntryPoint deposit themselves (Anvil gas is 
 If tests start failing with `ExceedsDailyLimit` or `ERC20InsufficientAllowance`, rerun ConfigureAgent (or restart
 Anvil and redeploy).
 
+## Phase 5: policy pre-check
+
+`src/policy/precheck.js`: `precheck(reads, { credits })` reads fresh values at the latest block (no cache) and
+returns `AGENT_OK`, `NEEDS_OWNER`, `NEEDS_OWNER_TOPUP` or `BLOCKED`, with every failed rule in `reasons`
+(`INVALID_CREDITS`, `AGENT_NOT_ACTIVE`, `AGENT_NOT_VALID`, `WRONG_POLICY_TOKEN`, `CALL_NOT_ALLOWED`,
+`RECIPIENT_NOT_ALLOWED`, `EXCEEDS_PER_TX`, `EXCEEDS_DAILY`, `ALLOWANCE_TOO_LOW`, `BALANCE_TOO_LOW`).
+Priority: BLOCKED > NEEDS_OWNER > NEEDS_OWNER_TOPUP > AGENT_OK. `evaluatePrecheck(state)` is the pure decision.
+
+The result is **advisory** (`advisory: true`): it only picks the path. It never marks anything paid or approved;
+success is proven only on chain (UserOperationEvent.success + CreditsPurchased, or a verified owner tx).
+
+`test/precheck.anvil.test.mjs` wraps every test in `evm_snapshot` / `evm_revert`, so it leaves the agent's daily
+spend, the allowance and the agent list exactly as they were. It uses the Anvil owner key (#0) to approve, transfer
+and add/revoke a spare agent (#4) the way the real owner would.
+
 ## Keys
 
 - `.env` holds the **agent** key and a separate **submitter** key (a funded Base Sepolia EOA). Testnet throwaway keys only.
@@ -148,7 +163,7 @@ backend/
 │   ├── config.js             (Phase 3, done: env, chain, addresses, ABIs)
 │   ├── chain/reads.js        (Phase 3, done: read-only client and startup checks)
 │   ├── chain/userop.js       (Phase 4, done: UserOp builder, submitter, decoder, per-agent queue)
-│   ├── policy/               (Phase 5: off-chain pre-check)
+│   ├── policy/precheck.js    (Phase 5, done: off-chain pre-check, advisory)
 │   ├── db/                   (Phase 6: node:sqlite schema and queries)
 │   ├── agent/                (Phase 7: LLM loop and typed tools)
 │   ├── approvals/            (Phase 9: owner approval requests and on-chain verification)
