@@ -35,7 +35,7 @@ export function describeBuy(r) {
     case "succeeded":
       return `On-chain result: purchase succeeded. ${r.creditsReceived} credits for ${r.amountPaid}. Tx ${r.txHash}${r.explorerUrl ? ` (${r.explorerUrl})` : ""}. Request ${r.requestId}.`;
     case "needs_owner_approval":
-      return `On-chain result: nothing was bought. ${r.price} is outside the agent's limits${r.reasons?.length ? ` (${r.reasons.join(" ")})` : ""}. Request ${r.requestId} is waiting for the wallet owner to approve and sign it.`;
+      return `On-chain result: nothing was bought. ${r.price} is outside the agent's limits${r.reasons?.length ? ` (${r.reasons.join(" ").replace(/\.$/, "")})` : ""}. Request ${r.requestId} is waiting for the wallet owner to approve and sign it.`;
     case "failed_onchain":
       return `On-chain result: the purchase failed (${r.error.message}). Tx ${r.txHash}. No credits were bought. Request ${r.requestId}.`;
     case "precheck_failed":

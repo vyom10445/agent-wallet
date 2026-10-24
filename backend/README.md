@@ -1,6 +1,6 @@
 # Agent backend (P-2)
 
-The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check), Phase 6 (SQLite store) and Phase 7 (AI agent) done.
+The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check), Phase 6 (SQLite store), Phase 7 (AI agent) and the HTTP server for H12 done.
 
 Addresses come from `../contracts/deployments/<chainId>.json` and ABIs from `../abi/`. Nothing is hard-coded,
 and nothing in `contracts/`, `abi/` or `integration/` is changed.
@@ -199,6 +199,17 @@ npm run chat -- "status"
 Model names change often; check the provider's model list if one is rejected. Whatever you pick, a failing or
 missing LLM never blocks the demo: the planner takes over and `planner` in the result says `fallback`.
 
+## HTTP server and H12 live run
+
+`src/server.js` (`npm start`): `node:http` on `127.0.0.1:PORT`, routes from `docs/BACKEND_API.md` §4:
+`GET /health`, `POST /agent/chat`, `GET /agent/messages`, `GET /requests`, `GET /requests/:id` (with `ownerApproval`
+rebuilt from chain for over-limit requests), `POST /approvals/:id/reject`, `GET /wallet/status`.
+`POST /approvals/:id/verify` (Phase 9) and `GET /events` (Phase 10) return `501 NOT_IMPLEMENTED` for now.
+On start it runs the config and chain checks, recovers `submitted` rows and expires overdue approvals.
+
+`scripts/h12-live.mjs` (`npm run h12`): the H12 go/no-go against the running server. Full PowerShell steps,
+including the `integration/agent-purchase.mjs` diagnosis and the Anvil fallback: [docs/H12_RUNBOOK.md](docs/H12_RUNBOOK.md).
+
 ## Keys
 
 - `.env` holds the **agent** key and a separate **submitter** key (a funded Base Sepolia EOA). Testnet throwaway keys only.
@@ -212,6 +223,8 @@ backend/
 ├── scripts/check-setup.mjs   (Phase 1)
 ├── scripts/status.mjs        (Phase 3)
 ├── scripts/chat.mjs          (Phase 7)
+├── scripts/h12-live.mjs      (H12 live check)
+├── docs/H12_RUNBOOK.md       (H12 PowerShell steps)
 ├── docs/BACKEND_API.md       (Phase 2, frozen)
 ├── src/
 │   ├── config.js             (Phase 3, done: env, chain, addresses, ABIs)
@@ -221,7 +234,7 @@ backend/
 │   ├── db/                   (Phase 6, done: schema, store, transitions, startup recovery)
 │   ├── agent/                (Phase 7, done: LLM loop, typed tools, fallback planner)
 │   ├── approvals/            (Phase 9: owner approval requests and on-chain verification)
-│   └── server.js             (HTTP API)
+│   └── server.js             (done: HTTP API, verify/events still 501)
 ├── test/
 └── data/                     (SQLite file, git-ignored)
 ```
