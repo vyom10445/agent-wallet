@@ -7,7 +7,11 @@
     "node": ">=22.13.0"
   },
   "scripts": {
-    "check": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/check-setup.mjs"
+    "check": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/check-setup.mjs",
+    "status": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env scripts/status.mjs",
+    "test": "node --disable-warning=ExperimentalWarning --env-file-if-exists=.env --test",
+    "test:anvil": "node --test test/config.test.mjs test/reads.anvil.test.mjs",
+    "test:sepolia": "node --env-file-if-exists=.env --test test/reads.base-sepolia.test.mjs"
   },
   "dependencies": {
     "viem": "2.57.11"

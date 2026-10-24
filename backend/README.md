@@ -1,6 +1,6 @@
 # Agent backend (P-2)
 
-The AI agent backend for the AgentWallet contracts. **Phase 1: setup only.** No backend logic yet.
+The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)) and Phase 3 (config and read-only chain client) done. No writes yet.
 
 Addresses come from `../contracts/deployments/<chainId>.json` and ABIs from `../abi/`. Nothing is hard-coded,
 and nothing in `contracts/`, `abi/` or `integration/` is changed.
@@ -51,6 +51,63 @@ forge script script/Status.s.sol --rpc-url base_sepolia
 Expect `EntryPoint is v0.7 true` and `agent valid now true`. If the agent has expired, revoke it and rerun
 ConfigureAgent as in `docs/PHASE12_FINAL.md` §8.
 
+## Phase 3: config and reads
+
+- `src/config.js`: loads `backend/.env` values, the address book `../contracts/deployments/<CHAIN_ID>.json` and the ABIs in
+  `../abi/`. It fails at startup with a clear `ConfigError` if `RPC_URL`, `AGENT_PRIVATE_KEY` or `SUBMITTER_PRIVATE_KEY` is
+  missing or malformed, if `AGENT_ADDRESS` doesn't match the agent key, or if a key is the owner's. Keys become viem
+  accounts; the key strings are never kept, logged or put in an error message.
+- `src/chain/reads.js`: every read the backend needs (bigint base units), `snapshot()` at one block, and
+  `assertStartup()`: RPC is on `CHAIN_ID`, `wallet.entryPoint()` equals the deployment's EntryPoint, and
+  `getAgent(agent).active` is true for the agent key. Otherwise it throws a clear `StartupError`.
+- `scripts/status.mjs`: prints the same labels and values as `Status.s.sol`, plus a few extra lines.
+
+### Compare with Status.s.sol on Base Sepolia
+
+`backend/.env` needs `CHAIN_ID=84532`, `RPC_URL`, `AGENT_PRIVATE_KEY` and `SUBMITTER_PRIVATE_KEY`.
+
+```powershell
+cd agent-wallet\backend
+npm run status
+cd ..\contracts
+forge script script/Status.s.sol --rpc-url base_sepolia
+```
+
+Every line down to `remaining today` should be the same (the backend also shows mUSDC in brackets).
+
+### Tests
+
+```powershell
+cd agent-wallet\backend
+npm test               # all tests: config (offline), Anvil (skipped if Anvil is not running), Base Sepolia (read-only, skipped without keys in .env)
+npm run test:sepolia   # only the Base Sepolia read-only tests
+npm run test:anvil     # only the config + Anvil tests (does not read .env)
+```
+
+Local Anvil chain for `test:anvil` (Anvil's published dev keys only; redo the deploy after every Anvil restart):
+
+```powershell
+# terminal 1
+anvil
+# terminal 2
+cd agent-wallet\contracts
+forge script script/Deploy.s.sol --rpc-url anvil --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+$env:AGENT_ADDRESS="0x70997970C51812dc3A010C7d01b50e0d17dc79C8"   # Anvil account #1
+forge script script/ConfigureAgent.s.sol --rpc-url anvil --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+cd ..\backend
+npm run test:anvil
+```
+
+To run the status script on Anvil, override the env for that window. Process env wins over `.env`:
+
+```powershell
+$env:CHAIN_ID="31337"; $env:RPC_URL="http://127.0.0.1:8545"
+$env:AGENT_PRIVATE_KEY="0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"      # Anvil #1
+$env:SUBMITTER_PRIVATE_KEY="0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a"  # Anvil #2
+npm run status
+Remove-Item Env:CHAIN_ID, Env:RPC_URL, Env:AGENT_PRIVATE_KEY, Env:SUBMITTER_PRIVATE_KEY   # back to .env
+```
+
 ## Keys
 
 - `.env` holds the **agent** key and a separate **submitter** key (a funded Base Sepolia EOA). Testnet throwaway keys only.
@@ -62,9 +119,12 @@ ConfigureAgent as in `docs/PHASE12_FINAL.md` §8.
 ```
 backend/
 ├── scripts/check-setup.mjs   (Phase 1)
+├── scripts/status.mjs        (Phase 3)
+├── docs/BACKEND_API.md       (Phase 2, frozen)
 ├── src/
-│   ├── config.js             (Phase 3: env, chain, addresses, ABIs)
-│   ├── chain/                (Phase 3-4: reads, UserOp builder, submitter, decoder; ported from integration/lib.mjs)
+│   ├── config.js             (Phase 3, done: env, chain, addresses, ABIs)
+│   ├── chain/reads.js        (Phase 3, done: read-only client and startup checks)
+│   ├── chain/                (Phase 4: UserOp builder, submitter, decoder; ported from integration/lib.mjs)
 │   ├── policy/               (Phase 5: off-chain pre-check)
 │   ├── db/                   (Phase 6: node:sqlite schema and queries)
 │   ├── agent/                (Phase 7: LLM loop and typed tools)
