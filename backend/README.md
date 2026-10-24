@@ -1,6 +1,6 @@
 # Agent backend (P-2)
 
-The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check) and Phase 6 (SQLite store) done.
+The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check), Phase 6 (SQLite store) and Phase 7 (AI agent) done.
 
 Addresses come from `../contracts/deployments/<chainId>.json` and ABIs from `../abi/`. Nothing is hard-coded,
 and nothing in `contracts/`, `abi/` or `integration/` is changed.
@@ -163,6 +163,42 @@ and add/revoke a spare agent (#4) the way the real owner would.
 The database file is `DB_PATH` (default `data/agent.sqlite`, git-ignored). To start over, stop the backend and delete
 `backend\data\`.
 
+## Phase 7: AI agent
+
+`src/agent/`:
+
+- `tools.js`: the four tools from `docs/BACKEND_API.md` §6 (`get_wallet_status`, `quote_credits`, `buy_credits`,
+  `list_requests`). Arguments are validated in code (no extra keys, `credits` 1 to 10000). `buy_credits` runs the
+  pre-check, then buys through the UserOp pipeline (`AGENT_OK`), creates a `needs_owner_approval` request
+  (`NEEDS_OWNER` / `NEEDS_OWNER_TOPUP`), or returns the reason (`BLOCKED`). Tool results contain no addresses or calldata.
+- `llm.js`: plain `fetch`, no SDK. Provider from `.env` (below). Any API error, timeout or refusal falls back to the planner.
+- `fallback.js`: deterministic planner ("buy N credits", "price of N credits", "status", "requests"). It refuses
+  messages that contain an address or ask to change limits, move funds or approve anything.
+- `agent.js`: the loop. Code adds a fixed "On-chain result" line for every purchase, and a model reply that claims an
+  unproven purchase, a transfer or a limit change is replaced. Addresses are stripped from model text.
+
+Try it (uses `backend\.env`):
+
+```powershell
+cd agent-wallet\backend
+npm run chat -- "buy 50 credits"
+npm run chat -- "buy 500 credits"      # over the 1 mUSDC limit: needs_owner_approval, nothing sent
+npm run chat -- "status"
+```
+
+### Choosing an LLM (`backend\.env`)
+
+| Option | Cost | Settings |
+|---|---|---|
+| No LLM (default) | Free, offline | `LLM_PROVIDER=none` |
+| Ollama on your PC | Free, local | Install from ollama.com, run `ollama pull qwen2.5:7b` (a model with tool calling), then `LLM_PROVIDER=openai-compatible`, `LLM_BASE_URL=http://localhost:11434/v1`, `LLM_MODEL=qwen2.5:7b`, no key |
+| Google Gemini | Free tier (rate-limited) | Key from aistudio.google.com, then `LLM_PROVIDER=openai-compatible`, `LLM_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/`, `LLM_MODEL=gemini-2.5-flash` (or a newer Flash model), `LLM_API_KEY=<key>` |
+| Anthropic Claude | Paid per token | `LLM_PROVIDER=anthropic`, `LLM_API_KEY=<key>`; `LLM_MODEL` defaults to `claude-opus-5-5`. `claude-haiku-5-5` is much cheaper if you prefer. Refusal fallbacks (`fallbacks: "default"`) are on for the models that support them |
+| OpenAI | Paid per token | `LLM_PROVIDER=openai-compatible`, `LLM_API_KEY=<key>`; base URL defaults to `https://api.openai.com/v1`, model to `gpt-4o-mini` |
+
+Model names change often; check the provider's model list if one is rejected. Whatever you pick, a failing or
+missing LLM never blocks the demo: the planner takes over and `planner` in the result says `fallback`.
+
 ## Keys
 
 - `.env` holds the **agent** key and a separate **submitter** key (a funded Base Sepolia EOA). Testnet throwaway keys only.
@@ -175,6 +211,7 @@ The database file is `DB_PATH` (default `data/agent.sqlite`, git-ignored). To st
 backend/
 ├── scripts/check-setup.mjs   (Phase 1)
 ├── scripts/status.mjs        (Phase 3)
+├── scripts/chat.mjs          (Phase 7)
 ├── docs/BACKEND_API.md       (Phase 2, frozen)
 ├── src/
 │   ├── config.js             (Phase 3, done: env, chain, addresses, ABIs)
@@ -182,7 +219,7 @@ backend/
 │   ├── chain/userop.js       (Phase 4, done: UserOp builder, submitter, decoder, per-agent queue)
 │   ├── policy/precheck.js    (Phase 5, done: off-chain pre-check, advisory)
 │   ├── db/                   (Phase 6, done: schema, store, transitions, startup recovery)
-│   ├── agent/                (Phase 7: LLM loop and typed tools)
+│   ├── agent/                (Phase 7, done: LLM loop, typed tools, fallback planner)
 │   ├── approvals/            (Phase 9: owner approval requests and on-chain verification)
 │   └── server.js             (HTTP API)
 ├── test/
