@@ -2,6 +2,9 @@
 
 The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check), Phase 6 (SQLite store), Phase 7 (AI agent), the HTTP server for H12, Phase 9 (owner approvals), Phase 10 (event indexer) and Phase 11 (security suite) done.
 
+**Final report (feature freeze):** [docs/BACKEND_FINAL.md](docs/BACKEND_FINAL.md): results, API, running on Windows, a
+5-minute demo, what is and isn't tested, and the known limitations.
+
 Addresses come from `../contracts/deployments/<chainId>.json` and ABIs from `../abi/`. Nothing is hard-coded,
 and nothing in `contracts/`, `abi/` or `integration/` is changed.
 
