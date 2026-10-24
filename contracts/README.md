@@ -62,6 +62,15 @@ or, outside git, re-run `forge install` with the tags above.
 - `src/interfaces/IAgentWallet.sol` + `test/InterfaceFreeze.t.sol` (fails if a frozen signature changes).
 - `../abi/`: exported ABIs.
 
+## Phases 3-4 (MockUSDC, MockMerchant)
+
+```bash
+forge test --match-contract MockUSDCTest
+forge test --match-contract MockMerchantTest
+# real purchase on local Anvil (run `anvil` in another terminal first):
+forge script script/DemoPurchase.s.sol --rpc-url anvil --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
+```
+
 ## Keys
 
 Use Anvil's built-in dev accounts locally. For Base Sepolia, use a throwaway testnet account stored in an
