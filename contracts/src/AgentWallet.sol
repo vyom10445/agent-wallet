@@ -13,9 +13,9 @@ import {IAgentWallet} from "./interfaces/IAgentWallet.sol";
 /// @title AgentWallet
 /// @notice SimpleAccount (EntryPoint v0.7) plus per-agent spending policies managed by the owner.
 /// @dev Owner signature validation, nonces, execute/executeBatch and the ERC-4337 lifecycle are inherited unchanged.
-///      An agent signature is accepted only for a UserOp whose callData is executeAsAgent(agent = signer, ...) and
-///      which passes the same checks executeAsAgent enforces. Spending the policy token is not enabled yet: any call
-///      that targets it or lowers the wallet's balance of it reverts until spend limits are implemented.
+///      Agents act only through UserOps whose callData is executeAsAgent(agent = signer, ...); the EntryPoint is the
+///      only caller executeAsAgent accepts. Every decrease of the policy token balance during an agent call is counted
+///      against maxPerTx and the daily limit and must go to an allowed recipient.
 ///      All token amounts are in the policy token's base units (MockUSDC: 1 USDC = 1_000_000).
 contract AgentWallet is SimpleAccount, IAgentWallet {
     /// @dev Packed: active, validAfter, validUntil, currentDay share one slot.
@@ -39,9 +39,6 @@ contract AgentWallet is SimpleAccount, IAgentWallet {
         internal _allowedCalls;
 
     mapping(address agent => mapping(uint256 epoch => mapping(address recipient => bool))) internal _allowedRecipients;
-
-    /// @dev Temporary: agent spending of the policy token is disabled until spend limits are implemented.
-    error SpendingNotEnabled(address agent, address token);
 
     constructor(IEntryPoint anEntryPoint) SimpleAccount(anEntryPoint) {}
 
@@ -115,25 +112,21 @@ contract AgentWallet is SimpleAccount, IAgentWallet {
     // ------------------------------------------------------------------
 
     /// @inheritdoc IAgentWallet
+    /// @dev Only callable by the EntryPoint, after _validateSignature checked that the UserOp signer is `agent`.
     function executeAsAgent(address agent, address target, uint256 value, bytes calldata data) external {
-        // EntryPoint path: _validateSignature already bound the signer to `agent`. Direct path: the agent itself.
-        if (msg.sender != address(entryPoint()) && msg.sender != agent) revert UnauthorizedCaller(msg.sender);
+        if (msg.sender != address(entryPoint())) revert UnauthorizedCaller(msg.sender);
         if (!isAgentValid(agent)) revert AgentNotValid(agent);
+        _revertWith(_agentCallError(agent, target, value, data));
 
-        bytes memory err = _agentCallError(agent, target, value, data);
-        if (err.length != 0) {
-            assembly ("memory-safe") {
-                revert(add(err, 32), mload(err))
-            }
-        }
-
-        address token = _policies[agent].token;
+        AgentPolicy storage p = _policies[agent];
+        address token = p.token;
         uint256 balanceBefore = token == address(0) ? 0 : IERC20(token).balanceOf(address(this));
 
         _call(target, 0, data);
 
-        if (token != address(0) && IERC20(token).balanceOf(address(this)) < balanceBefore) {
-            revert SpendingNotEnabled(agent, token);
+        if (token != address(0)) {
+            uint256 balanceAfter = IERC20(token).balanceOf(address(this));
+            if (balanceAfter < balanceBefore) _recordSpend(agent, p, target, data, balanceBefore - balanceAfter);
         }
         emit AgentExecuted(agent, target, bytes4(data[:4]), value);
     }
@@ -142,22 +135,19 @@ contract AgentWallet is SimpleAccount, IAgentWallet {
     // ERC-4337 validation
     // ------------------------------------------------------------------
 
-    /// @dev Owner signatures are checked by the unchanged SimpleAccount implementation first. Otherwise the signature
-    ///      must come from an active agent, the UserOp must call executeAsAgent with that agent as the first argument,
-    ///      and the call must pass the agent's restrictions. The validity window is returned to the EntryPoint as
-    ///      validAfter/validUntil because ERC-7562 forbids reading block.timestamp during validation.
-    ///      Only the wallet's own storage is read here.
+    /// @dev A UserOp calling executeAsAgent is valid only if it is signed by the agent named in its first argument
+    ///      and passes that agent's time-independent checks; the validity window is returned to the EntryPoint as
+    ///      validAfter/validUntil because ERC-7562 forbids reading block.timestamp during validation. Every other
+    ///      UserOp goes to the unchanged SimpleAccount owner check. Only the wallet's own storage is read here.
     function _validateSignature(PackedUserOperation calldata userOp, bytes32 userOpHash)
         internal
         override
         returns (uint256 validationData)
     {
-        if (super._validateSignature(userOp, userOpHash) == SIG_VALIDATION_SUCCESS) {
-            return SIG_VALIDATION_SUCCESS;
-        }
-
         bytes calldata callData = userOp.callData;
-        if (callData.length < 4 || bytes4(callData[:4]) != this.executeAsAgent.selector) return SIG_VALIDATION_FAILED;
+        if (callData.length < 4 || bytes4(callData[:4]) != this.executeAsAgent.selector) {
+            return super._validateSignature(userOp, userOpHash);
+        }
 
         (address agent, address target, uint256 value, bytes memory data) =
             abi.decode(callData[4:], (address, address, uint256, bytes));
@@ -238,15 +228,62 @@ contract AgentWallet is SimpleAccount, IAgentWallet {
         // forge-lint: disable-next-line(unsafe-typecast)
         bytes4 selector = bytes4(data); // length checked above
         if (target == p.token) {
-            if (selector == IERC20.transfer.selector) {
-                return abi.encodeWithSelector(SpendingNotEnabled.selector, agent, target);
+            // Only an exact transfer(address,uint256) to an allowed recipient within maxPerTx.
+            if (selector != IERC20.transfer.selector || data.length != 68) {
+                return abi.encodeWithSelector(InvalidTokenCall.selector, selector);
             }
-            return abi.encodeWithSelector(InvalidTokenCall.selector, selector);
+            uint256 recipientWord;
+            uint256 amount;
+            assembly ("memory-safe") {
+                recipientWord := mload(add(data, 36))
+                amount := mload(add(data, 68))
+            }
+            if (recipientWord >> 160 != 0) return abi.encodeWithSelector(InvalidTokenCall.selector, selector);
+            // forge-lint: disable-next-line(unsafe-typecast)
+            address recipient = address(uint160(recipientWord));
+            if (!_allowedRecipients[agent][_epochs[agent]][recipient]) {
+                return abi.encodeWithSelector(RecipientNotAllowed.selector, agent, recipient);
+            }
+            if (amount > p.maxPerTx) return abi.encodeWithSelector(ExceedsPerTxLimit.selector, amount, p.maxPerTx);
+            return "";
         }
         if (!_allowedCalls[agent][_epochs[agent]][target][selector]) {
             return abi.encodeWithSelector(CallNotAllowed.selector, agent, target, selector);
         }
         return "";
+    }
+
+    /// @dev Counts a policy-token decrease of `amount` caused by an agent call. Reverting here reverts the whole call,
+    ///      so the counter only ever includes spending that actually happened.
+    function _recordSpend(address agent, AgentPolicy storage p, address target, bytes calldata data, uint256 amount)
+        internal
+    {
+        address recipient;
+        if (target == p.token) {
+            (recipient,) = abi.decode(data[4:], (address, uint256));
+        } else {
+            // Pulled through an allowance by an allowlisted contract: that contract is the payee and must be allowed.
+            recipient = target;
+            if (!_allowedRecipients[agent][_epochs[agent]][target]) revert RecipientNotAllowed(agent, target);
+        }
+        if (amount > p.maxPerTx) revert ExceedsPerTxLimit(amount, p.maxPerTx);
+
+        uint64 today = _currentDay();
+        uint256 spent = p.currentDay == today ? p.spentToday : 0;
+        uint256 remaining = spent >= p.dailyLimit ? 0 : p.dailyLimit - spent;
+        if (amount > remaining) revert ExceedsDailyLimit(amount, remaining);
+
+        p.currentDay = today;
+        p.spentToday = spent + amount;
+        emit AgentSpent(agent, p.token, recipient, amount, spent + amount);
+    }
+
+    function _revertWith(bytes memory err) internal pure {
+        if (err.length != 0) {
+            assembly ("memory-safe") {
+                revert(add(err, 32), mload(err))
+            }
+        }
     }
 
     function _requireAllowedTarget(address target) internal view {

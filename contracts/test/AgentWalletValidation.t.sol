@@ -30,13 +30,6 @@ contract Target {
     function other() external {}
 }
 
-/// @dev Allowed target that moves the wallet's tokens through a pre-existing allowance.
-contract Puller {
-    function pull(IERC20 token, address from, uint256 amount) external {
-        require(token.transferFrom(from, address(this), amount));
-    }
-}
-
 /// @notice Phase 6: ERC-4337 validation and agent authorization.
 contract AgentWalletValidationTest is Test {
     uint256 constant ONE_USDC = 1_000_000;
@@ -206,12 +199,6 @@ contract AgentWalletValidationTest is Test {
         assertEq(vd >> 208, START); // validAfter
     }
 
-    function test_agentCanCallDirectly() public {
-        vm.prank(agent);
-        wallet.executeAsAgent(agent, address(target), 0, _ping());
-        assertEq(target.pings(), 1);
-    }
-
     function test_agentOperationReplayRejected() public {
         PackedUserOperation memory op =
             _op(_agentCall(agent, address(target), 0, _ping()), _agentNonce(agent), agentKey);
@@ -254,7 +241,7 @@ contract AgentWalletValidationTest is Test {
         wallet.revokeAgent(agent);
         _expectAgentOpRejected(_agentCall(agent, address(target), 0, _ping()));
 
-        vm.prank(agent);
+        vm.prank(address(entryPoint)); // as the EntryPoint after validation
         vm.expectRevert(abi.encodeWithSelector(IAgentWallet.AgentNotValid.selector, agent));
         wallet.executeAsAgent(agent, address(target), 0, _ping());
     }
@@ -287,7 +274,7 @@ contract AgentWalletValidationTest is Test {
 
     function test_expiredAgentRejectedOnDirectCall() public {
         vm.warp(START + 7 days + 1);
-        vm.prank(agent);
+        vm.prank(address(entryPoint)); // as the EntryPoint after validation
         vm.expectRevert(abi.encodeWithSelector(IAgentWallet.AgentNotValid.selector, agent));
         wallet.executeAsAgent(agent, address(target), 0, _ping());
     }
@@ -298,7 +285,7 @@ contract AgentWalletValidationTest is Test {
         Target otherTarget = new Target();
         _expectAgentOpRejected(_agentCall(agent, address(otherTarget), 0, _ping()));
 
-        vm.prank(agent);
+        vm.prank(address(entryPoint)); // as the EntryPoint after validation
         vm.expectRevert(
             abi.encodeWithSelector(
                 IAgentWallet.CallNotAllowed.selector, agent, address(otherTarget), Target.ping.selector
@@ -311,7 +298,7 @@ contract AgentWalletValidationTest is Test {
         bytes memory data = abi.encodeCall(Target.other, ());
         _expectAgentOpRejected(_agentCall(agent, address(target), 0, data));
 
-        vm.prank(agent);
+        vm.prank(address(entryPoint)); // as the EntryPoint after validation
         vm.expectRevert(
             abi.encodeWithSelector(IAgentWallet.CallNotAllowed.selector, agent, address(target), Target.other.selector)
         );
@@ -324,14 +311,14 @@ contract AgentWalletValidationTest is Test {
     }
 
     function test_emptyCalldataRejected() public {
-        vm.prank(agent);
+        vm.prank(address(entryPoint)); // as the EntryPoint after validation
         vm.expectRevert(abi.encodeWithSelector(IAgentWallet.CallNotAllowed.selector, agent, address(target), bytes4(0)));
         wallet.executeAsAgent(agent, address(target), 0, "");
     }
 
     function test_nativeValueRejected() public {
         _expectAgentOpRejected(_agentCall(agent, address(target), 1, _ping()));
-        vm.prank(agent);
+        vm.prank(address(entryPoint)); // as the EntryPoint after validation
         vm.expectRevert(abi.encodeWithSelector(IAgentWallet.NativeValueNotAllowed.selector, 1));
         wallet.executeAsAgent(agent, address(target), 1, _ping());
     }
@@ -370,12 +357,12 @@ contract AgentWalletValidationTest is Test {
         bytes memory admin = abi.encodeCall(IAgentWallet.setPolicy, (agent, address(usdc), 1e30, 1e30));
         _expectAgentOpRejected(_agentCall(agent, address(wallet), 0, admin));
 
-        vm.prank(agent);
+        vm.prank(address(entryPoint)); // as the EntryPoint after validation
         vm.expectRevert(abi.encodeWithSelector(IAgentWallet.ForbiddenTarget.selector, address(wallet)));
         wallet.executeAsAgent(agent, address(wallet), 0, admin);
 
         bytes memory upgrade = abi.encodeCall(UUPSUpgradeable.upgradeToAndCall, (address(target), ""));
-        vm.prank(agent);
+        vm.prank(address(entryPoint)); // as the EntryPoint after validation
         vm.expectRevert(abi.encodeWithSelector(IAgentWallet.ForbiddenTarget.selector, address(wallet)));
         wallet.executeAsAgent(agent, address(wallet), 0, upgrade);
         assertEq(wallet.getAgent(agent).dailyLimit, 50 * ONE_USDC);
@@ -384,7 +371,7 @@ contract AgentWalletValidationTest is Test {
     function test_agentCannotTargetEntryPoint() public {
         bytes memory withdraw = abi.encodeCall(IStakeManager.withdrawTo, (payable(agent), 1));
         _expectAgentOpRejected(_agentCall(agent, address(entryPoint), 0, withdraw));
-        vm.prank(agent);
+        vm.prank(address(entryPoint)); // as the EntryPoint after validation
         vm.expectRevert(abi.encodeWithSelector(IAgentWallet.ForbiddenTarget.selector, address(entryPoint)));
         wallet.executeAsAgent(agent, address(entryPoint), 0, withdraw);
     }
@@ -402,49 +389,30 @@ contract AgentWalletValidationTest is Test {
 
     // ---------------- caller binding (B7) ----------------
 
-    function test_directCallerMustBeTheAgent() public {
-        vm.prank(stranger);
-        vm.expectRevert(abi.encodeWithSelector(IAgentWallet.UnauthorizedCaller.selector, stranger));
-        wallet.executeAsAgent(agent, address(target), 0, _ping());
-
-        vm.prank(agent2);
-        vm.expectRevert(abi.encodeWithSelector(IAgentWallet.UnauthorizedCaller.selector, agent2));
+    function test_onlyEntryPointCanCallExecuteAsAgent() public {
+        address[3] memory callers = [agent, agent2, stranger];
+        for (uint256 i; i < callers.length; i++) {
+            vm.prank(callers[i]);
+            vm.expectRevert(abi.encodeWithSelector(IAgentWallet.UnauthorizedCaller.selector, callers[i]));
+            wallet.executeAsAgent(agent, address(target), 0, _ping());
+        }
+        vm.prank(owner);
+        vm.expectRevert(abi.encodeWithSelector(IAgentWallet.UnauthorizedCaller.selector, owner));
         wallet.executeAsAgent(agent, address(target), 0, _ping());
     }
 
-    // ---------------- policy token stays locked until spend limits exist (B5) ----------------
+    function test_ownerSignedExecuteAsAgentRejected() public {
+        // Even the owner cannot run an op "as" an agent: executeAsAgent ops must be signed by the named agent.
+        _expectFailedOp(_op(_agentCall(agent, address(target), 0, _ping()), wallet.getNonce(), ownerKey), AA24);
+    }
 
     function test_agentCannotApproveOrPullPolicyToken() public {
         bytes memory approve = abi.encodeCall(IERC20.approve, (stranger, type(uint256).max));
         _expectAgentOpRejected(_agentCall(agent, address(usdc), 0, approve));
-        vm.prank(agent);
+        vm.prank(address(entryPoint)); // as the EntryPoint after validation
         vm.expectRevert(abi.encodeWithSelector(IAgentWallet.InvalidTokenCall.selector, IERC20.approve.selector));
         wallet.executeAsAgent(agent, address(usdc), 0, approve);
         assertEq(usdc.allowance(address(wallet), stranger), 0);
-    }
-
-    function test_agentTransferOfPolicyTokenNotEnabledYet() public {
-        bytes memory transfer = abi.encodeCall(IERC20.transfer, (stranger, ONE_USDC));
-        _expectAgentOpRejected(_agentCall(agent, address(usdc), 0, transfer));
-        vm.prank(agent);
-        vm.expectRevert(abi.encodeWithSelector(AgentWallet.SpendingNotEnabled.selector, agent, address(usdc)));
-        wallet.executeAsAgent(agent, address(usdc), 0, transfer);
-    }
-
-    function test_allowedCallThatSpendsPolicyTokenReverts() public {
-        // Owner approved a merchant-like contract and allowed the agent to call it. Until spend limits exist,
-        // any decrease of the policy token balance during an agent call is rejected.
-        Puller puller = new Puller();
-        vm.startPrank(owner);
-        wallet.execute(address(usdc), 0, abi.encodeCall(IERC20.approve, (address(puller), 5 * ONE_USDC)));
-        wallet.allowCall(agent, address(puller), Puller.pull.selector, true);
-        vm.stopPrank();
-
-        bytes memory pull = abi.encodeCall(Puller.pull, (IERC20(address(usdc)), address(wallet), ONE_USDC));
-        vm.prank(agent);
-        vm.expectRevert(abi.encodeWithSelector(AgentWallet.SpendingNotEnabled.selector, agent, address(usdc)));
-        wallet.executeAsAgent(agent, address(puller), 0, pull);
-        assertEq(usdc.balanceOf(address(wallet)), 100 * ONE_USDC);
     }
 
     function test_agentRevokedAfterSigningIsRejected() public {

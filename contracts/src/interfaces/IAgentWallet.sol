@@ -86,10 +86,11 @@ interface IAgentWallet {
     // ------------------------------------------------------------------
 
     /// @notice Execute one call under `agent`'s restrictions.
-    /// @dev Callable by the EntryPoint (UserOp signed by `agent`) or directly by `agent`.
+    /// @dev Callable only by the EntryPoint, for a UserOp signed by `agent`.
     ///      value must be 0. target must not be the wallet or the EntryPoint.
-    ///      If target == policy token: data must be exactly transfer(address,uint256) to an allowed recipient
-    ///      within maxPerTx and the remaining daily limit. Otherwise (target, selector) must be allowed.
+    ///      If target == policy token: data must be exactly transfer(address,uint256) to an allowed recipient.
+    ///      Otherwise (target, selector) must be allowed. Any decrease of the wallet's policy-token balance during
+    ///      the call is counted against maxPerTx and the daily limit, and a non-token target must be an allowed recipient.
     function executeAsAgent(address agent, address target, uint256 value, bytes calldata data) external;
 
     // ------------------------------------------------------------------

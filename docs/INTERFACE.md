@@ -27,8 +27,7 @@
 |---|---|
 | Owner EOA, directly | `execute`, `executeBatch`, all admin functions, `withdrawDepositTo`, `upgradeToAndCall` |
 | Owner, via UserOp | `execute` / `executeBatch` directly; admin functions as `execute(wallet, 0, abi.encodeCall(addAgent, ...))` |
-| Agent, directly (agent pays gas) | `executeAsAgent(agent = itself, ...)` only |
-| Agent, via UserOp (signed by agent) | UserOp `callData` must be `executeAsAgent(agent = signer, ...)`. Any other callData is rejected in validation |
+| Agent, via UserOp (signed by agent) | UserOp `callData` must be `executeAsAgent(agent = signer, ...)`. Any other callData is rejected in validation. This is the **only** way an agent can act (Phase 7): direct calls to `executeAsAgent` revert, and owner-signed `executeAsAgent` ops are rejected |
 | Anyone | read functions, `addDeposit`, sending ETH/tokens to the wallet |
 
 An agent can never: call the wallet itself or the EntryPoint, send ETH (`value` must be 0), call `approve`/`transferFrom`
@@ -50,7 +49,7 @@ on its policy token, or act outside `[validAfter, validUntil]` or after `revokeA
 |---|---|
 | `execute(address dest, uint256 value, bytes func)` | Inherited from SimpleAccount, unchanged. Owner or EntryPoint. |
 | `executeBatch(address[] dest, uint256[] value, bytes[] func)` | Inherited, unchanged. Owner or EntryPoint. |
-| `executeAsAgent(address agent, address target, uint256 value, bytes data)` | Caller = EntryPoint (UserOp signed by `agent`) or `agent` itself. Agent must be valid. `value == 0`. `target` ≠ wallet, ≠ EntryPoint. **If `target` == policy token:** `data` must be `transfer(recipient, amount)`, recipient allowed, `amount <= maxPerTx`, `amount <= remainingDailyAllowance`. **Otherwise:** `(target, selector)` must be allowed. |
+| `executeAsAgent(address agent, address target, uint256 value, bytes data)` | Caller = EntryPoint only (UserOp signed by `agent`). Agent must be valid. `value == 0`. `target` ≠ wallet, ≠ EntryPoint. **If `target` == policy token:** `data` must be `transfer(recipient, amount)`, recipient allowed, `amount <= maxPerTx`, `amount <= remainingDailyAllowance`. **Otherwise:** `(target, selector)` must be allowed. **Always:** the wallet's policy-token balance is measured before and after; any decrease is checked against `maxPerTx` and the daily limit and, for non-token targets, the target must be an allowed recipient. |
 
 **Paying a merchant (the main flow for P-2).** MockMerchant pulls payment with `transferFrom` (see "MockMerchant" below):
 
@@ -58,6 +57,7 @@ on its policy token, or act outside `[validAfter, validUntil]` or after `revokeA
 // once, by the owner (agents cannot approve): cap what the merchant may pull
 owner: wallet.execute(usdc, 0, abi.encodeCall(IERC20.approve, (merchant, 20_000_000)))   // 20 USDC
 owner: wallet.allowCall(agent, merchant, MockMerchant.purchase.selector, true)
+owner: wallet.allowRecipient(agent, merchant, true)                     // merchant is the payee
 
 // each purchase, by the agent
 cost     = merchant.quote(500)                                            // 5_000_000 = 5 USDC
@@ -134,6 +134,6 @@ Security implications of pull:
 ## Open questions for P-2 / P-3
 
 1. One spend token per agent (MockUSDC) is enough for the demo?
-2. Agents sending via UserOps (needs a bundler/paymaster on Base Sepolia) or directly from the agent EOA (needs ETH for gas)? Both are supported.
+2. ~~UserOps or direct calls?~~ Decided in Phase 7: UserOps through the EntryPoint only (needs a bundler on Base Sepolia, or the agent backend calls `handleOps` itself).
 3. Is a UTC-day limit acceptable, or do you need a rolling 24h window?
-4. Merchant purchases are pull-based, so agent limits are enforced by measuring the token balance change during `executeAsAgent` (no signature change). OK?
+4. ~~Pull-based limits?~~ Implemented in Phase 7: the balance change during `executeAsAgent` is what counts. For a purchase, also call `allowRecipient(agent, merchant, true)`.
