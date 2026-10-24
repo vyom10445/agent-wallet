@@ -12,13 +12,16 @@ evm_version = "shanghai"
 optimizer = true
 optimizer_runs = 1000000
 via_ir = false
+# Scripts write/read the address book in deployments/<chainId>.json and nothing else.
+fs_permissions = [{ access = "read-write", path = "./deployments" }]
 
 [rpc_endpoints]
 anvil = "http://127.0.0.1:8545"
 base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
 
+# Etherscan API V2: one key from etherscan.io works for Base Sepolia (BaseScan's old V1 endpoint is retired).
 [etherscan]
-base_sepolia = { key = "${BASESCAN_API_KEY}", url = "https://api-sepolia.basescan.org/api", chain = 84532 }
+base_sepolia = { key = "${ETHERSCAN_API_KEY}", chain = 84532 }
 
 [fmt]
 line_length = 120

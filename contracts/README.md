@@ -81,6 +81,16 @@ forge script script/H12Demo.s.sol --rpc-url anvil --broadcast
 forge script script/Deploy.s.sol --rpc-url anvil --broadcast --unlocked --sender 0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266
 ```
 
+## Phase 10 (Base Sepolia)
+
+Full PowerShell runbook: [docs/PHASE10_DEPLOYMENT.md](../docs/PHASE10_DEPLOYMENT.md). Order:
+`Deploy.s.sol` -> `ConfigureAgent.s.sol` -> verify -> `SmokeTest.s.sol` -> `Status.s.sol` (read-only).
+Addresses are written to `deployments/<chainId>.json`. Scripts refuse every chain except 31337 and 84532.
+
+```bash
+forge test --match-contract DeployScriptTest -vv
+```
+
 ## Keys
 
 Use Anvil's built-in dev accounts locally. For Base Sepolia, use a throwaway testnet account stored in an
