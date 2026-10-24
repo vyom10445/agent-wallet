@@ -1,16 +1,17 @@
 // HTTP API from docs/BACKEND_API.md §4 (v1), on node:http. Binds to 127.0.0.1 only.
 // Implemented: GET /health, POST /agent/chat, GET /agent/messages, GET /requests, GET /requests/:id,
-// POST /approvals/:id/reject, GET /wallet/status.
-// Later phases: POST /approvals/:id/verify (Phase 9) and GET /events (Phase 10) answer 501 until then.
+// POST /approvals/:id/verify, POST /approvals/:id/reject, GET /wallet/status.
+// Later phase: GET /events (Phase 10) answers 501 until then.
 //
 // Start: npm start   (uses backend/.env)
 import { createServer as createHttpServer } from "node:http";
 import { pathToFileURL } from "node:url";
-import { encodeFunctionData, formatUnits } from "viem";
-import { loadConfig, abi, ConfigError, USDC_DECIMALS } from "./config.js";
+import { formatUnits } from "viem";
+import { loadConfig, ConfigError, USDC_DECIMALS } from "./config.js";
 import { createReads, assertStartup, StartupError } from "./chain/reads.js";
 import { startStore, STATUSES, TransitionError } from "./db/index.js";
 import { buildAgent, BusyError, InputError, LlmError, createLlmFromEnv } from "./agent/index.js";
+import { buildOwnerApproval, verifyOwnerApproval, createProofs, VerifyError } from "./approvals/index.js";
 
 const EXPLORERS = { 84532: "https://sepolia.basescan.org/tx/" };
 const MAX_BODY = 16 * 1024;
@@ -55,8 +56,8 @@ const intParam = (v, { min, max, def }) => {
   return n;
 };
 
-/** deps: { config, reads, store, agent, env, llmMode } */
-export function createApp({ config, reads, store, agent, env = process.env, llmMode = "fallback" }) {
+/** deps: { config, reads, store, agent, env, llmMode, proofs? } */
+export function createApp({ config, reads, store, agent, env = process.env, llmMode = "fallback", proofs = createProofs({ config, reads }) }) {
   const a = config.addresses;
   const minDeposit = BigInt(env.MIN_DEPOSIT_WEI || "1000000000000000");
   const minSubmitter = BigInt(env.MIN_SUBMITTER_WEI || "1000000000000000");
@@ -85,28 +86,6 @@ export function createApp({ config, reads, store, agent, env = process.env, llmM
       expiresAt: r.expiresAt,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
-    };
-  }
-
-  // §4.5: what the owner must sign, rebuilt from on-chain reads now (as integration/owner-approve.mjs does).
-  async function ownerApproval(r) {
-    const [price, standing] = await Promise.all([reads.quote(r.credits), reads.merchantAllowance()]);
-    const func = [
-      encodeFunctionData({ abi: abi.usdc, functionName: "approve", args: [a.merchant, standing + price] }),
-      encodeFunctionData({ abi: abi.merchant, functionName: "purchase", args: [BigInt(r.credits), price] }),
-    ];
-    return {
-      wallet: a.wallet,
-      function: "executeBatch",
-      price: amount(price),
-      standingAllowance: amount(standing),
-      args: { dest: [a.usdc, a.merchant], value: [], func },
-      calls: [
-        { to: a.usdc, function: "approve", args: { spender: a.merchant, value: amount(standing + price) } },
-        { to: a.merchant, function: "purchase", args: { credits: r.credits, payment: amount(price) } },
-      ],
-      signWith: "owner wallet (injected), integration/owner-approve.mjs, or script/OwnerApprovePurchase.s.sol",
-      readAt: Math.floor(Date.now() / 1000),
     };
   }
 
@@ -171,13 +150,21 @@ export function createApp({ config, reads, store, agent, env = process.env, llmM
       const status = q.get("status") || undefined;
       if (status && status.split(",").some((x) => !STATUSES.includes(x))) throw new HttpError(400, "INVALID_INPUT", `status must be one of ${STATUSES.join(", ")}`);
       const before = q.get("before") ? intParam(q.get("before"), { min: 0, max: 2 ** 40, def: undefined }) : undefined;
-      return [200, { requests: store.listRequests({ status, before, limit: intParam(q.get("limit"), { min: 1, max: 200, def: 50 }) }).map(requestView) }];
+      const rows = store.listRequests({ status, before, limit: intParam(q.get("limit"), { min: 1, max: 200, def: 50 }) });
+      // Paid rows carry proofVerified, re-checked on chain (a database row alone is never proof of payment).
+      const requests = await Promise.all(rows.map(async (r) => (proofs.needsProof(r) ? { ...requestView(r), proofVerified: (await proofs.check(r)).verified } : requestView(r))));
+      return [200, { requests }];
     }],
     ["GET", /^\/requests\/(req_[0-9a-f]{16})$/, async (_req, m) => {
       const r = store.getRequest(m[1]);
       if (!r) throw new HttpError(404, "NOT_FOUND", "Unknown request id");
       const view = requestView(r);
-      if (r.status === "needs_owner_approval" || r.status === "expired") view.ownerApproval = await ownerApproval(r);
+      if (r.status === "needs_owner_approval" || r.status === "expired") view.ownerApproval = await buildOwnerApproval({ config, reads }, r);
+      if (proofs.needsProof(r)) {
+        const p = await proofs.check(r);
+        view.proofVerified = p.verified;
+        if (!p.cached) view.proofChecks = p.checks;
+      }
       return [200, view];
     }],
     ["POST", /^\/approvals\/(req_[0-9a-f]{16})\/reject$/, async (req, m) => {
@@ -186,8 +173,10 @@ export function createApp({ config, reads, store, agent, env = process.env, llmM
       if (!store.getRequest(m[1])) throw new HttpError(404, "NOT_FOUND", "Unknown request id");
       return [200, { request: requestView(store.transition(m[1], "rejected", { ownerNote: body.note })) }];
     }],
-    ["POST", /^\/approvals\/(req_[0-9a-f]{16})\/verify$/, async () => {
-      throw new HttpError(501, "NOT_IMPLEMENTED", "Owner approval verification arrives in Phase 9");
+    ["POST", /^\/approvals\/(req_[0-9a-f]{16})\/verify$/, async (req, m) => {
+      const body = await readJson(req);
+      const out = await verifyOwnerApproval({ config, reads, store }, { requestId: m[1], txHash: body.txHash });
+      return [200, { request: { ...requestView(out.request), proofVerified: true }, checks: out.checks }];
     }],
     ["GET", /^\/wallet\/status$/, async () => [200, await walletStatus()]],
     ["GET", /^\/events$/, async () => {
@@ -210,7 +199,8 @@ export function createApp({ config, reads, store, agent, env = process.env, llmM
       send(res, status, body, cors);
     } catch (e) {
       let err = e;
-      if (e instanceof InputError) err = new HttpError(400, "INVALID_INPUT", e.message);
+      if (e instanceof VerifyError) err = new HttpError(e.status, e.code, e.message, e.checks ? { checks: e.checks } : undefined);
+      else if (e instanceof InputError) err = new HttpError(400, "INVALID_INPUT", e.message);
       else if (e instanceof BusyError) err = new HttpError(409, "BUSY", e.message);
       else if (e instanceof TransitionError) err = new HttpError(409, "WRONG_STATUS", e.message);
       else if (e instanceof LlmError) err = new HttpError(502, "LLM_ERROR", e.message);
@@ -231,8 +221,9 @@ export async function startServer(env = process.env) {
   const startup = await assertStartup(config, reads);
   const { store, recovered, expired } = await startStore(config, reads);
   const llm = createLlmFromEnv(env);
-  const agent = buildAgent({ config, reads, store, env, llm });
-  const handler = createApp({ config, reads, store, agent, env, llmMode: llm ? "available" : "fallback" });
+  const proofs = createProofs({ config, reads });
+  const agent = buildAgent({ config, reads, store, env, llm, proofs });
+  const handler = createApp({ config, reads, store, agent, env, llmMode: llm ? "available" : "fallback", proofs });
   const server = createHttpServer(handler);
   const sweep = setInterval(() => store.expireDue(), 60_000);
   sweep.unref();
@@ -245,6 +236,8 @@ export async function startServer(env = process.env) {
   if (!startup.agentValidNow) console.warn("WARNING: the agent is registered but not valid now (expired or not yet valid). Purchases will be BLOCKED.");
   if (recovered.succeeded.length + recovered.failed.length + recovered.pending.length) console.log("Recovered submitted requests:", JSON.stringify(recovered));
   if (expired.length) console.log("Expired owner approvals:", expired.join(", "));
+  const unproven = await proofs.audit(store).catch(() => []);
+  if (unproven.length) console.warn(`WARNING: ${unproven.length} paid request(s) have no valid on-chain proof (edited database?): ${unproven.join(", ")}. The API shows them with proofVerified: false.`);
   return { server, config, store };
 }
 

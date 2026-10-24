@@ -90,9 +90,9 @@ const EXPLORERS = { 84532: "https://sepolia.basescan.org/tx/" };
 
 /**
  * Tool execution. Returns plain JSON-safe objects (no bigint, no addresses) for the model.
- * deps: { config, reads, store, purchaser, precheck?, approvalTtlSeconds? }
+ * deps: { config, reads, store, purchaser, precheck?, approvalTtlSeconds?, proofs? (approvals/proof.js) }
  */
-export function createTools({ config, reads, store, purchaser, precheck = runPrecheck, approvalTtlSeconds = 86_400 }) {
+export function createTools({ config, reads, store, purchaser, precheck = runPrecheck, approvalTtlSeconds = 86_400, proofs = null }) {
   const explorerUrl = (txHash) => (txHash && EXPLORERS[config.chainId] ? EXPLORERS[config.chainId] + txHash : null);
 
   const requestView = (r) => ({
@@ -167,7 +167,10 @@ export function createTools({ config, reads, store, purchaser, precheck = runPre
   }
 
   async function list_requests({ limit = 10, status }) {
-    return { requests: store.listRequests({ status, limit }).map(requestView) };
+    const rows = store.listRequests({ status, limit });
+    // A paid status in the database is only a claim: re-check it on chain so the model never reports a forged row as paid.
+    const views = await Promise.all(rows.map(async (r) => (proofs && proofs.needsProof(r) ? { ...requestView(r), proofVerified: (await proofs.check(r)).verified } : requestView(r))));
+    return { requests: views };
   }
 
   const impl = { get_wallet_status, quote_credits, buy_credits, list_requests };

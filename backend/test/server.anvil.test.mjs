@@ -96,5 +96,6 @@ test("errors follow the ErrorBody shape", { skip }, async () => {
   assert.equal((await req("POST", "/agent/chat", { message: "x".repeat(20_000) })).status, 400);
   assert.equal((await req("GET", "/requests?status=paid")).status, 400);
   assert.equal((await req("GET", "/events")).status, 501);
-  assert.equal((await req("POST", "/approvals/req_0000000000000000/verify", { txHash: "0x" + "0".repeat(64) })).status, 501);
+  assert.equal((await req("POST", "/approvals/req_0000000000000000/verify", { txHash: "0x" + "0".repeat(64) })).status, 404);
+  assert.equal((await req("POST", "/approvals/req_0000000000000000/verify", { txHash: "0x12" })).body.error.code, "INVALID_INPUT");
 });

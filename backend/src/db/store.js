@@ -167,6 +167,11 @@ export function createStore(db, { secrets = secretsFromEnv(), clock = now } = {}
       return rowToRequest(getRow.get(id));
     },
 
+    /** The request that already stores this tx hash (any case), or null. Used by verify (TX_ALREADY_USED). */
+    getRequestByTxHash(txHash) {
+      return rowToRequest(db.prepare("SELECT * FROM purchase_requests WHERE lower(tx_hash) = lower(?)").get(String(txHash)));
+    },
+
     listRequests({ status, limit = 50, before } = {}) {
       const statuses = status ? (Array.isArray(status) ? status : String(status).split(",")) : [];
       for (const s of statuses) if (!STATUSES.includes(s)) throw new TypeError(`unknown status ${s}`);

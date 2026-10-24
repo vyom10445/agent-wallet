@@ -91,6 +91,11 @@ export function loadConfig(env = process.env) {
   if (agent.address === addresses.owner) throw new ConfigError("AGENT_PRIVATE_KEY is the wallet owner's key. Use a separate agent key.");
   if (submitter.address === addresses.owner) throw new ConfigError("SUBMITTER_PRIVATE_KEY is the wallet owner's key. Use a separate funded throwaway key.");
 
+  const approvalTtlSeconds = Number(env.APPROVAL_TTL_SECONDS?.trim() || 86_400);
+  if (!Number.isSafeInteger(approvalTtlSeconds) || approvalTtlSeconds < 60 || approvalTtlSeconds > 30 * 86_400) {
+    throw new ConfigError(`APPROVAL_TTL_SECONDS must be a whole number of seconds from 60 to 2592000 (30 days), got "${env.APPROVAL_TTL_SECONDS}".`);
+  }
+
   return Object.freeze({
     chainId,
     chain,
@@ -100,6 +105,7 @@ export function loadConfig(env = process.env) {
     submitter,
     dbPath: env.DB_PATH?.trim() || "data/agent.sqlite",
     port: Number(env.PORT?.trim() || 8787),
+    approvalTtlSeconds, // owner approvals expire this long after the request is created
     // Safe summary for logs: addresses only.
     toJSON() {
       return { chainId, wallet: addresses.wallet, agent: agent.address, submitter: submitter.address };

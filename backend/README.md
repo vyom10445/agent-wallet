@@ -1,6 +1,6 @@
 # Agent backend (P-2)
 
-The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check), Phase 6 (SQLite store), Phase 7 (AI agent) and the HTTP server for H12 done.
+The AI agent backend for the AgentWallet contracts. **Status:** Phase 1 (setup), Phase 2 (API frozen in [docs/BACKEND_API.md](docs/BACKEND_API.md)), Phase 3 (config and read-only chain client), Phase 4 (agent UserOp pipeline), Phase 5 (policy pre-check), Phase 6 (SQLite store), Phase 7 (AI agent), the HTTP server for H12 and Phase 9 (owner approvals) done.
 
 Addresses come from `../contracts/deployments/<chainId>.json` and ABIs from `../abi/`. Nothing is hard-coded,
 and nothing in `contracts/`, `abi/` or `integration/` is changed.
@@ -203,12 +203,21 @@ missing LLM never blocks the demo: the planner takes over and `planner` in the r
 
 `src/server.js` (`npm start`): `node:http` on `127.0.0.1:PORT`, routes from `docs/BACKEND_API.md` §4:
 `GET /health`, `POST /agent/chat`, `GET /agent/messages`, `GET /requests`, `GET /requests/:id` (with `ownerApproval`
-rebuilt from chain for over-limit requests), `POST /approvals/:id/reject`, `GET /wallet/status`.
-`POST /approvals/:id/verify` (Phase 9) and `GET /events` (Phase 10) return `501 NOT_IMPLEMENTED` for now.
-On start it runs the config and chain checks, recovers `submitted` rows and expires overdue approvals.
+rebuilt from chain for over-limit requests), `POST /approvals/:id/verify`, `POST /approvals/:id/reject`,
+`GET /wallet/status`. `GET /events` (Phase 10) returns `501 NOT_IMPLEMENTED` for now.
+On start it runs the config and chain checks, recovers `submitted` rows, expires overdue approvals and re-checks paid
+rows against the chain.
 
 `scripts/h12-live.mjs` (`npm run h12`): the H12 go/no-go against the running server. Full PowerShell steps,
 including the `integration/agent-purchase.mjs` diagnosis and the Anvil fallback: [docs/H12_RUNBOOK.md](docs/H12_RUNBOOK.md).
+
+## Phase 9: owner approvals
+
+`src/approvals/`: `ownerApproval.js` builds what the owner signs (`wallet.executeBatch` with `approve(merchant,
+standing + quote)` and `purchase(credits, quote)`, read from chain each time). `verify.js` checks the owner's tx on chain
+before a request becomes `fulfilled_by_owner`. `proof.js` re-checks paid rows on read, so an edited database row shows
+`proofVerified: false`. The backend never signs owner approvals. Requests expire after `APPROVAL_TTL_SECONDS`.
+Checks, the Step 9.2 PowerShell run and the tests: [docs/PHASE9_OWNER_APPROVAL.md](docs/PHASE9_OWNER_APPROVAL.md).
 
 ## Keys
 
@@ -233,8 +242,8 @@ backend/
 │   ├── policy/precheck.js    (Phase 5, done: off-chain pre-check, advisory)
 │   ├── db/                   (Phase 6, done: schema, store, transitions, startup recovery)
 │   ├── agent/                (Phase 7, done: LLM loop, typed tools, fallback planner)
-│   ├── approvals/            (Phase 9: owner approval requests and on-chain verification)
-│   └── server.js             (done: HTTP API, verify/events still 501)
+│   ├── approvals/            (Phase 9, done: owner approval payload, on-chain verify, proof re-check)
+│   └── server.js             (done: HTTP API, /events still 501)
 ├── test/
 └── data/                     (SQLite file, git-ignored)
 ```

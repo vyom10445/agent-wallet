@@ -186,6 +186,9 @@ type PurchaseRequest = {
   expiresAt: number | null;                  // owner path only
   createdAt: number; updatedAt: number;
   ownerApproval?: OwnerApproval;             // only in GET /requests/:id, only while needs_owner_approval or expired
+  proofVerified?: boolean | null;            // succeeded / fulfilled_by_owner only: re-checked on chain at read time
+                                             // (false = the row's proof does not hold, null = chain unreadable)
+  proofChecks?: { name: string; ok: boolean; detail?: string }[];  // GET /requests/:id only, when freshly checked
 };
 ```
 
@@ -226,6 +229,14 @@ The backend fetches the receipt and the transaction and marks the request `fulfi
 | 4 | Owner authorized it: **either** a direct tx with `to == wallet`, `from == wallet.owner()` and calldata decoding to `executeBatch`; **or** a tx to the EntryPoint whose `UserOperationEvent` has `sender == wallet`, nonce key `nonce >> 64 == 0` (owner key) and `success == true` | `422 NOT_OWNER_TX` |
 | 5 | A `CreditsPurchased` log **emitted by the merchant address** in this receipt with `buyer == wallet` and `credits == request.credits` | `422 NO_PURCHASE_EVENT`, `422 CREDITS_MISMATCH` |
 | 6 | The block timestamp is at or after the request's `createdAt` (an older purchase cannot be reused) | `422 TX_TOO_OLD` |
+
+A malformed `txHash` returns `400 INVALID_INPUT`. Check 6 allows 120 s of clock skew between the backend's clock
+(`createdAt`) and the chain's block time. `details.checks` entries carry a `detail` string on failure.
+
+**Paid rows are re-checked on read (additive in v1, Phase 9).** A `succeeded` or `fulfilled_by_owner` row is a claim
+in SQLite, not proof. `GET /requests`, `GET /requests/:id` and the agent's `list_requests` re-check it against the
+receipt and return `proofVerified`; a hand-edited row shows `false`. Clients must treat a request as paid only when
+`proofVerified === true`.
 
 `200`
 ```json

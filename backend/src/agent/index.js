@@ -9,11 +9,12 @@ export { createTools, TOOL_DEFS, TOOL_NAMES, validateToolInput } from "./tools.j
 export { createLlmFromEnv, LlmError } from "./llm.js";
 export { planFallback } from "./fallback.js";
 
-export function buildAgent({ config, reads, store, env = process.env, purchaser, llm, log = console.warn }) {
+export function buildAgent({ config, reads, store, env = process.env, purchaser, llm, proofs, log = console.warn }) {
   const tools = createTools({
     config, reads, store,
     purchaser: purchaser ?? createPurchaser(config, reads),
-    approvalTtlSeconds: Number(env.APPROVAL_TTL_SECONDS || 86_400),
+    approvalTtlSeconds: config.approvalTtlSeconds ?? 86_400,
+    proofs,
   });
   return createAgent({ llm: llm === undefined ? createLlmFromEnv(env) : llm, tools, store, log });
 }

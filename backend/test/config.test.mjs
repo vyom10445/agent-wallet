@@ -62,3 +62,9 @@ test("refuses the owner key and a shared agent/submitter key", () => {
   failsWith({ ...base, OWNER_PRIVATE_KEY: "0x1" }, /must never hold the owner key/);
   failsWith({ ...base, SUBMITTER_PRIVATE_KEY: AGENT_KEY }, /must be different keys/);
 });
+
+test("APPROVAL_TTL_SECONDS: default one day, validated range", () => {
+  assert.equal(loadConfig(base).approvalTtlSeconds, 86_400);
+  assert.equal(loadConfig({ ...base, APPROVAL_TTL_SECONDS: "3600" }).approvalTtlSeconds, 3600);
+  for (const bad of ["abc", "10", "1.5", "9999999"]) failsWith({ ...base, APPROVAL_TTL_SECONDS: bad }, /APPROVAL_TTL_SECONDS/);
+});
