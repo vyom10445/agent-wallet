@@ -47,4 +47,14 @@ contract DeployScriptTest is Test {
         vm.expectRevert("Wallet owner is zero");
         script.deploy(address(0));
     }
+
+    function test_factory_createAccountTwiceReturnsSameWalletAndKeepsOwner() public {
+        Deploy.Deployment memory d = new Deploy().deploy(owner);
+        address attacker = makeAddr("attacker");
+        vm.prank(attacker); // anyone may call the factory, but it can only return the existing wallet
+        address again = address(d.factory.createAccount(owner, 0));
+        assertEq(again, address(d.wallet));
+        assertEq(d.wallet.owner(), owner);
+        assertTrue(address(d.factory.createAccount(attacker, 0)) != address(d.wallet), "other owner, other wallet");
+    }
 }
