@@ -424,13 +424,6 @@ contract AgentWalletTest is Test {
         assertEq(wallet.getAgent(agent).dailyLimit, 50 * ONE_USDC);
     }
 
-    function test_executeAsAgentNotYetAvailable() public {
-        _addAgentWithPolicy();
-        vm.prank(agent);
-        vm.expectRevert(AgentWallet.ExecutionNotImplemented.selector);
-        wallet.executeAsAgent(agent, address(usdc), 0, "");
-    }
-
     function _handleOp(bytes memory callData, uint256 signerKey) internal {
         entryPoint.handleOps(_signedOps(callData, signerKey), payable(makeAddr("bundler")));
     }

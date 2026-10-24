@@ -3,12 +3,19 @@ pragma solidity ^0.8.23;
 
 import {SimpleAccount} from "account-abstraction/samples/SimpleAccount.sol";
 import {IEntryPoint} from "account-abstraction/interfaces/IEntryPoint.sol";
+import {PackedUserOperation} from "account-abstraction/interfaces/PackedUserOperation.sol";
+import {SIG_VALIDATION_FAILED, SIG_VALIDATION_SUCCESS, _packValidationData} from "account-abstraction/core/Helpers.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import {MessageHashUtils} from "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 import {IAgentWallet} from "./interfaces/IAgentWallet.sol";
 
 /// @title AgentWallet
 /// @notice SimpleAccount (EntryPoint v0.7) plus per-agent spending policies managed by the owner.
-/// @dev Phase 5: storage, admin and read functions only. Signature validation, nonces and execute/executeBatch are
-///      inherited unchanged; agents cannot act yet (executeAsAgent reverts, agent signatures are not accepted).
+/// @dev Owner signature validation, nonces, execute/executeBatch and the ERC-4337 lifecycle are inherited unchanged.
+///      An agent signature is accepted only for a UserOp whose callData is executeAsAgent(agent = signer, ...) and
+///      which passes the same checks executeAsAgent enforces. Spending the policy token is not enabled yet: any call
+///      that targets it or lowers the wallet's balance of it reverts until spend limits are implemented.
 ///      All token amounts are in the policy token's base units (MockUSDC: 1 USDC = 1_000_000).
 contract AgentWallet is SimpleAccount, IAgentWallet {
     /// @dev Packed: active, validAfter, validUntil, currentDay share one slot.
@@ -33,8 +40,8 @@ contract AgentWallet is SimpleAccount, IAgentWallet {
 
     mapping(address agent => mapping(uint256 epoch => mapping(address recipient => bool))) internal _allowedRecipients;
 
-    /// @dev Temporary until the restricted execution path is implemented.
-    error ExecutionNotImplemented();
+    /// @dev Temporary: agent spending of the policy token is disabled until spend limits are implemented.
+    error SpendingNotEnabled(address agent, address token);
 
     constructor(IEntryPoint anEntryPoint) SimpleAccount(anEntryPoint) {}
 
@@ -108,8 +115,59 @@ contract AgentWallet is SimpleAccount, IAgentWallet {
     // ------------------------------------------------------------------
 
     /// @inheritdoc IAgentWallet
-    function executeAsAgent(address, address, uint256, bytes calldata) external pure {
-        revert ExecutionNotImplemented();
+    function executeAsAgent(address agent, address target, uint256 value, bytes calldata data) external {
+        // EntryPoint path: _validateSignature already bound the signer to `agent`. Direct path: the agent itself.
+        if (msg.sender != address(entryPoint()) && msg.sender != agent) revert UnauthorizedCaller(msg.sender);
+        if (!isAgentValid(agent)) revert AgentNotValid(agent);
+
+        bytes memory err = _agentCallError(agent, target, value, data);
+        if (err.length != 0) {
+            assembly ("memory-safe") {
+                revert(add(err, 32), mload(err))
+            }
+        }
+
+        address token = _policies[agent].token;
+        uint256 balanceBefore = token == address(0) ? 0 : IERC20(token).balanceOf(address(this));
+
+        _call(target, 0, data);
+
+        if (token != address(0) && IERC20(token).balanceOf(address(this)) < balanceBefore) {
+            revert SpendingNotEnabled(agent, token);
+        }
+        emit AgentExecuted(agent, target, bytes4(data[:4]), value);
+    }
+
+    // ------------------------------------------------------------------
+    // ERC-4337 validation
+    // ------------------------------------------------------------------
+
+    /// @dev Owner signatures are checked by the unchanged SimpleAccount implementation first. Otherwise the signature
+    ///      must come from an active agent, the UserOp must call executeAsAgent with that agent as the first argument,
+    ///      and the call must pass the agent's restrictions. The validity window is returned to the EntryPoint as
+    ///      validAfter/validUntil because ERC-7562 forbids reading block.timestamp during validation.
+    ///      Only the wallet's own storage is read here.
+    function _validateSignature(PackedUserOperation calldata userOp, bytes32 userOpHash)
+        internal
+        override
+        returns (uint256 validationData)
+    {
+        if (super._validateSignature(userOp, userOpHash) == SIG_VALIDATION_SUCCESS) {
+            return SIG_VALIDATION_SUCCESS;
+        }
+
+        bytes calldata callData = userOp.callData;
+        if (callData.length < 4 || bytes4(callData[:4]) != this.executeAsAgent.selector) return SIG_VALIDATION_FAILED;
+
+        (address agent, address target, uint256 value, bytes memory data) =
+            abi.decode(callData[4:], (address, address, uint256, bytes));
+
+        address signer = ECDSA.recover(MessageHashUtils.toEthSignedMessageHash(userOpHash), userOp.signature);
+        if (signer != agent) return SIG_VALIDATION_FAILED;
+        if (_agentCallError(agent, target, value, data).length != 0) return SIG_VALIDATION_FAILED;
+
+        AgentPolicy storage p = _policies[agent];
+        return _packValidationData(false, p.validUntil, p.validAfter);
     }
 
     // ------------------------------------------------------------------
@@ -161,6 +219,34 @@ contract AgentWallet is SimpleAccount, IAgentWallet {
     function _activePolicy(address agent) internal view returns (AgentPolicy storage p) {
         p = _policies[agent];
         if (!p.active) revert AgentNotValid(agent);
+    }
+
+    /// @dev Checks that do not depend on time, shared by validation and execution. Empty return = allowed,
+    ///      otherwise the ABI-encoded custom error to revert with.
+    function _agentCallError(address agent, address target, uint256 value, bytes memory data)
+        internal
+        view
+        returns (bytes memory)
+    {
+        AgentPolicy storage p = _policies[agent];
+        if (!p.active) return abi.encodeWithSelector(AgentNotValid.selector, agent);
+        if (value != 0) return abi.encodeWithSelector(NativeValueNotAllowed.selector, value);
+        if (target == address(0) || target == address(this) || target == address(entryPoint())) {
+            return abi.encodeWithSelector(ForbiddenTarget.selector, target);
+        }
+        if (data.length < 4) return abi.encodeWithSelector(CallNotAllowed.selector, agent, target, bytes4(0));
+        // forge-lint: disable-next-line(unsafe-typecast)
+        bytes4 selector = bytes4(data); // length checked above
+        if (target == p.token) {
+            if (selector == IERC20.transfer.selector) {
+                return abi.encodeWithSelector(SpendingNotEnabled.selector, agent, target);
+            }
+            return abi.encodeWithSelector(InvalidTokenCall.selector, selector);
+        }
+        if (!_allowedCalls[agent][_epochs[agent]][target][selector]) {
+            return abi.encodeWithSelector(CallNotAllowed.selector, agent, target, selector);
+        }
+        return "";
     }
 
     function _requireAllowedTarget(address target) internal view {
