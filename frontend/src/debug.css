@@ -1,0 +1,13 @@
+/* Phase 3 debug panel only. */
+.debug { max-width: 920px; margin: 0 auto; padding: 24px 16px; text-align: left; overflow-wrap: anywhere; }
+.debug h1 { font-size: 1.6rem; margin: 0 0 4px; }
+.debug h2 { font-size: 1.1rem; margin: 24px 0 8px; }
+.debug table { border-collapse: collapse; width: 100%; }
+.debug th, .debug td { border-bottom: 1px solid color-mix(in srgb, currentColor 15%, transparent); padding: 6px 8px; vertical-align: top; text-align: left; }
+.debug th { width: 180px; font-weight: 600; }
+.debug code { font-size: 0.9em; }
+.debug .muted { opacity: 0.7; font-size: 0.9em; }
+.debug .banner { border-radius: 8px; padding: 10px 14px; margin: 12px 0; border: 1px solid; }
+.debug .banner.red { background: color-mix(in srgb, #d33 14%, transparent); border-color: #d33; }
+.debug .banner.green { background: color-mix(in srgb, #2a2 14%, transparent); border-color: #2a2; }
+.debug button { font: inherit; padding: 2px 10px; cursor: pointer; }

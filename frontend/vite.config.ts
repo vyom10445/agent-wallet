@@ -22,5 +22,7 @@ export default defineConfig({
       allow: [here('.'), here('../abi'), here('../contracts/deployments')],
     },
   },
+  // viem alone is close to 500 kB minified; this is a local app, so one chunk is fine and the warning is noise.
+  build: { chunkSizeWarningLimit: 900 },
   preview: { host: 'localhost', port: 5173, strictPort: true },
 })
